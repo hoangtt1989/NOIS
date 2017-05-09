@@ -4,7 +4,12 @@
 \alias{print.NOIS_fit}
 \title{Print method for a NOIS fit}
 \usage{
-\method{print}{NOIS_fit}(obj)
+\method{print}{NOIS_fit}(x, ...)
+}
+\arguments{
+\item{x}{A \code{NOIS_fit}.}
+
+\item{...}{Not used.}
 }
 \description{
 Print method for a NOIS fit

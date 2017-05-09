@@ -271,10 +271,13 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "MCV", first_h = NULL, 
 }
 
 #' Print method for a NOIS fit
-print.NOIS_fit <- function(obj) {
-    cat("Number of detected outliers =", length(obj$pool_outlier), "\nNumber of observations =", length(obj$y), "\nConvergence =", all(as.logical(obj$converged)),
-        "\nMSE =", mean((obj$y_adj - obj$pool_fit)^2), "\nBias corrected MSE =", mean((obj$y_adj - obj$bias_pool_fit)^2), "\nFirst optimal bandwidth =",
-        obj$first_h, "\nPooled optimal bandwidth =", obj$pool_h)
+#' @param x A \code{NOIS_fit}.
+#' @param ... Not used.
+#' @export
+print.NOIS_fit <- function(x, ...) {
+    cat("Number of detected outliers =", length(x$pool_outlier), "\nNumber of observations =", length(x$y), "\nConvergence =", all(as.logical(x$converged)),
+        "\nMSE =", mean((x$y_adj - x$pool_fit)^2), "\nBias corrected MSE =", mean((x$y_adj - x$bias_pool_fit)^2), "\nFirst optimal bandwidth =",
+        x$first_h, "\nPooled optimal bandwidth =", x$pool_h)
 }
 
 
