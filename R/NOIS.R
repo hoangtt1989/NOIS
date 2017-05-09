@@ -23,15 +23,15 @@ qdet <- function(local_q = 0.1, nz) {
 #' @importFrom foreach %do%
 #' @export
 BIC_tuner <- function(data, q_tst = 1:floor(nrow(data)/3), bias_correct = T, parallel = F, ...) {
-    
+
     `%fun%` <- ifelse(parallel, `%dopar%`, `%do%`)
-    
+
     BIC_fits <- foreach::foreach(i = 1:length(q_tst)) %fun% {
         fit <- NOIS_fit(data, pool_q = q_tst[i], ...)
         BIC_val <- BIC_NOIS(fit, bias_correct = T)
         return(BIC_val)
     }
-    
+
     min_ind <- q_tst[which.min(purrr::map_dbl(BIC_fits, "BIC"))]
     if (min_ind == q_tst[1] | min_ind == q_tst[length(q_tst)]) {
         warning("Minimum BIC is at the edge of the grid")
@@ -132,9 +132,9 @@ BIC_NOIS <- function(NOIS_fit, bias_correct = T) {
 #' sine_fit <- NOIS_fit(sine_data, 'x', 'y', pool_q = .1, CV_method = 'LOOCV')
 #' @family NOIS CV functions
 #' @export
-NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL, pool_h = NULL, local_q = 0.1, pool_q = 0.1, tol = 1e-07, 
+NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL, pool_h = NULL, local_q = 0.1, pool_q = 0.1, tol = 1e-07,
     maxit = 200, ...) {
-    
+
     # checking inputs
     if (!is.data.frame(data)) {
         stop("data must be a data.frame")
@@ -148,9 +148,9 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
     if (pool_q <= 0) {
         stop("pool_q must be greater than 0")
     }
-    
+
     # initializing vectors, parameters
-    nn <- length(data$x)
+    nn <- nrow(data)
     cond_check <- rep(1, nn)
     gamma_curr <- matrix(0, nrow = nn, ncol = nn)
     yy_adj <- matrix(0, nrow = nn, ncol = nn)
@@ -159,7 +159,7 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
     converged <- rep(0, nn)
     iter <- rep(0, nn)
     cond_check <- rep(1, nn)
-    
+
     yy <- data[[y]]
     xx <- data[[x]]
     if (CV_method %in% c("LOOCV", "MCV", "PCV")) {
@@ -184,20 +184,20 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
     } else {
         stop("Supply valid CV_method - LOOCV, MCV, PCV or none")
     }
-    
+
     nw_ests <- nwvector(xx, yy, first_h)
     bias_nw_ests <- biasnwvector(xx, yy, nw_ests, first_h)
-    
+
     ptm <- proc.time()
     for (jj in 1:nn) {
-        
+
         kernlist <- gausskern(xx[jj] - xx, first_h)
         nz_ind <- which(kernlist != 0 & kernlist >= 1e-20)
         kern_nz <- kernlist[nz_ind]
         kern_nzsqrt <- sqrt(kern_nz)
         kern_nzsqrtinv <- 1/kern_nzsqrt
         qq[jj] <- qdet(local_q, kern_nz)
-        
+
         for (ii in 1:maxit) {
             gamma_next <- rep(0, nn)
             yy_adj[, jj] <- yy - gamma_curr[, jj]
@@ -206,7 +206,7 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
             gamma_next[nz_ind] <- kern_nzsqrtinv * quantile_thresh(rr, qq[jj])
             cond_check[jj] <- max(abs(gamma_next - gamma_curr[, jj]))
             gamma_curr[, jj] <- gamma_next
-            
+
             if (max(abs(cond_check[jj])) <= tol) {
                 converged[jj] <- T
                 break
@@ -220,12 +220,12 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
         }
     }
     etm <- proc.time() - ptm
-    
+
     # get max
     gam_max <- apply(gamma_curr, 1, function(x) {
         x[which.max(abs(x))]
     })
-    
+
     # index for gamma vectors
     if (pool_q < 1) {
         pool_q <- min(floor(pool_q * nn), length(which(gam_max != 0)))
@@ -235,7 +235,7 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
     }
     gam_val <- quantile_thresh(gam_max, pool_q)
     gam_ind <- which(gam_val != 0)
-    
+
     # pooled y adj
     pool_y_adj <- yy - gam_val
     # pooled cv
@@ -259,15 +259,15 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
         }
         pool_hgrid <- NULL
     }
-    
+
     # pooled fit
     pool_fit <- nwvector(xx, pool_y_adj, pool_h)
     bias_pool_fit <- biasnwvector(xx, pool_y_adj, pool_fit, pool_h)
     pool_nonout <- setdiff(1:nn, gam_ind)
-    
-    model_output <- list(local_fit = local_fit, pool_fit = pool_fit, bias_pool_fit = bias_pool_fit, first_fit = nw_ests, bias_first_fit = bias_nw_ests, 
-        local_gamma = gamma_curr, pool_gamma = gam_val, pool_outlier = gam_ind, local_q = qq, pool_q = pool_q, pool_nonout = pool_nonout, 
-        x = xx, local_y_adj = yy_adj, y_adj = pool_y_adj, y = yy, first_h = first_h, pool_h = pool_h, first_hgrid = first_hgrid, pool_hgrid = pool_hgrid, 
+
+    model_output <- list(local_fit = local_fit, pool_fit = pool_fit, bias_pool_fit = bias_pool_fit, first_fit = nw_ests, bias_first_fit = bias_nw_ests,
+        local_gamma = gamma_curr, pool_gamma = gam_val, pool_outlier = gam_ind, local_q = qq, pool_q = pool_q, pool_nonout = pool_nonout,
+        x = xx, local_y_adj = yy_adj, y_adj = pool_y_adj, y = yy, first_h = first_h, pool_h = pool_h, first_hgrid = first_hgrid, pool_hgrid = pool_hgrid,
         iter = iter, time = etm, converged = converged, cond_check = cond_check)
     class(model_output) <- "NOIS_fit"
     model_output
@@ -278,8 +278,8 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
 #' @param ... Not used.
 #' @export
 print.NOIS_fit <- function(x, ...) {
-    cat("Number of detected outliers =", length(x$pool_outlier), "\nNumber of observations =", length(x$y), "\nTime =", x$time, "\nConvergence =", 
-        all(as.logical(x$converged)), "\nMSE =", mean((x$y_adj - x$pool_fit)^2), "\nBias corrected MSE =", mean((x$y_adj - x$bias_pool_fit)^2), 
+    cat("Number of detected outliers =", length(x$pool_outlier), "\nNumber of observations =", length(x$y), "\nTime =", x$time, "\nConvergence =",
+        all(as.logical(x$converged)), "\nMSE =", mean((x$y_adj - x$pool_fit)^2), "\nBias corrected MSE =", mean((x$y_adj - x$bias_pool_fit)^2),
         "\nFirst optimal bandwidth =", x$first_h, "\nPooled optimal bandwidth =", x$pool_h)
 }
 
@@ -321,7 +321,7 @@ outlier_plot <- function(NOIS_fit, color = "outlier", ..., bias_correct = T) {
     }
     fit_type <- ifelse(bias_correct, "bias_fit", "fit")
     df <- NOIS_df(NOIS_fit)
-    pt <- ggplot2::ggplot(df) + ggplot2::geom_point(ggplot2::aes_string(x = "x", y = "y", color = color, ...)) + ggplot2::geom_line(ggplot2::aes_string(x = "x", 
+    pt <- ggplot2::ggplot(df) + ggplot2::geom_point(ggplot2::aes_string(x = "x", y = "y", color = color, ...)) + ggplot2::geom_line(ggplot2::aes_string(x = "x",
         y = fit_type))
     pt
 }
