@@ -27,6 +27,7 @@ devtools::install_github('hoangtt1989/NOIS')
 We generate a random sine curve and perturb it with outliers.
 
 ```{r}
+library(dplyr)
 library(ggplot2)
 library(NOIS)
 set.seed(123)
@@ -48,15 +49,27 @@ data <- data.frame(x = xt, y = yt, true_outlier = xt %in% xt_outliers)
 ggplot(data) + geom_point(aes(x, y, color = true_outlier))
 ```
 
-We use NOIS to detect outliers and estimate the underlying curve.
+We use NOIS to detect outliers and estimate the underlying curve. Inputs to this function include a `data.frame` as well as strings specifying which columns contain "x" and "y" values. See the help documentation for `NOIS_fit` for additional information about function inputs.
 
 ```{r}
-sine_fit <- NOIS_fit(data, CV_method = 'LOOCV', pool_q = nout)
+sine_fit <- NOIS_fit(data, x = 'x', y = 'y', CV_method = 'LOOCV', pool_q = nout)
 sine_fit
 ```
 
 We plot the estimated curve and mark the detected outliers. NOIS correctly detects all of the outliers.
 
 ```{r}
-outlier_plot(sine_fit)
+pt <- outlier_plot(sine_fit)
+pt
+```
+
+We use the predictive residuals bootstrap to construct confidence bands.
+
+```{r}
+sine_BS <- NOIS_confint(sine_fit, conf_type = 'pred_BS', B = 500, conf_level = .05)
+sine_df <- NOIS_df(sine_fit) %>%
+  mutate(low_conf = sine_BS$low_predicted,
+         up_conf = sine_BS$up_predicted)
+pt2 <- ggplot(sine_df) + geom_point(aes(x, y, color = outlier)) + geom_line(aes(x, bias_fit)) + geom_ribbon(aes(x = x, ymin = low_conf, ymax = up_conf), alpha = .5)
+pt2
 ```

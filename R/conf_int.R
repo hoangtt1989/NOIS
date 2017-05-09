@@ -34,7 +34,7 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
     } else {
         stop("Must supply valid fit_type: NOIS or regular.")
     }
-
+    
     cvloop <- function(input, x, y, bandwidth) {
         est_val <- nwestimator(x[input], x[-input], y[-input], bandwidth)
         return(est_val)
@@ -43,13 +43,13 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
         est_val <- biasnwestimator(x[input], x[-input], y[-input], bandwidth, nwvals[input], nwvals[-input], shift_sq = shift_sq)
         return(est_val)
     }
-
+    
     loo_est <- sapply(1:length(x), cvloop, x, y, bandwidth)
-
+    
     if (bias_correct == TRUE) {
-      loo_est <- sapply(1:length(x), biascvloop, x, y, nw_est, bandwidth)
+        loo_est <- sapply(1:length(x), biascvloop, x, y, nw_est, bandwidth)
     }
-
+    
     sd_estimator <- function(x, y, h, kernel_fit) {
         M_x <- sapply(1:length(x), cvloop, x, y^2, h)
         if (bias_correct == TRUE) {
@@ -57,13 +57,13 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
         }
         sd_est <- sqrt(M_x - kernel_fit^2)
     }
-
+    
     sd_est <- sd_estimator(x, y, bandwidth, loo_est)
-
+    
     fitted_resid <- (y - loo_est)/sd_est
-
+    
     center_resid <- fitted_resid - mean(fitted_resid)
-
+    
     resids <- function(x, theta, first_resid, sd_est, bandwidth) {
         npts <- length(x)
         resid.resamp <- sample(first_resid, size = npts, replace = TRUE)
@@ -74,8 +74,8 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
         }
         return(newfit)
     }
-
-
+    
+    
     if (parallel == T) {
         `%fun%` <- doRNG::`%dorng%`
         ret <- foreach::foreach(i = 1:B, .combine = cbind) %fun% {
@@ -86,18 +86,18 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
     } else {
         resids_boots <- replicate(B, resids(x, theta, center_resid, sd_est, bandwidth))
     }
-
+    
     roots <- apply(resids_boots, 2, function(x) {
         theta - x
     })
-
+    
     q_lower <- apply(roots, 1, stats::quantile, probs = conf_level/2)
     q_upper <- apply(roots, 1, stats::quantile, probs = (1 - conf_level/2))
-
-
+    
+    
     cis.lower <- theta + q_lower
     cis.upper <- theta + q_upper
-
+    
     return(list(low_predicted = cis.lower, up_predicted = cis.upper, sd = sd_est, fitted_resid = fitted_resid, center_resid = center_resid))
 }
 
@@ -131,11 +131,11 @@ resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bia
     } else {
         stop("Must supply valid fit_type: NOIS or regular.")
     }
-
+    
     resid <- y - func_est
     center_resid <- resid - mean(resid)
-
-
+    
+    
     resids <- function(x, func_est, first_resid, bandwidth) {
         npts <- length(x)
         resid.resamp <- sample(first_resid, size = npts, replace = TRUE)
@@ -146,7 +146,7 @@ resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bia
         }
         return(newfit)
     }
-
+    
     if (parallel == T) {
         `%fun%` <- doRNG::`%dorng%`
         ret <- foreach::foreach(i = 1:B, .combine = cbind) %fun% {
@@ -157,15 +157,15 @@ resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bia
     } else {
         resids_boots <- replicate(B, resids(x, func_est, center_resid, bandwidth))
     }
-
+    
     roots <- apply(resids_boots, 2, function(x) {
         func_est - x
     })
-
+    
     q_lower <- apply(roots, 1, stats::quantile, probs = conf_level/2)
     q_upper <- apply(roots, 1, stats::quantile, probs = (1 - conf_level/2))
-
-
+    
+    
     cis.lower <- func_est + q_lower
     cis.upper <- func_est + q_upper
     return(list(up_predicted = cis.upper, low_predicted = cis.lower))
@@ -216,7 +216,7 @@ NOIS_logelr_root <- function(yvals, hyp_theta, gkcalc, conf_level = 0.05, invis 
 #' \item{\code{low_iter}}{Number of iterations for the lower band.}
 #' @family NOIS confidence bands
 #' @export
-EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_correct = T, parallel = F, calib_type = "F", left = 0, right = 20,
+EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_correct = T, parallel = F, calib_type = "F", left = 0, right = 20, 
     maxit = 50) {
     x <- NOIS_fit$x
     if (fit_type == "NOIS") {
@@ -240,13 +240,13 @@ EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_corr
     } else {
         stop("Must supply valid fit_type: NOIS or regular.")
     }
-
+    
     if (parallel == F) {
         `%fun%` <- foreach::`%do%`
     } else {
         `%fun%` <- foreach::`%dopar%`
     }
-
+    
     ptm <- proc.time()
     loop_obj <- foreach::foreach(i = 1:length(x)) %fun% {
         gkcalc <- as.matrix(gausskern(x - x[i], bandwidth))
@@ -258,7 +258,7 @@ EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_corr
             }
             return(llr)
         }
-
+        
         mletheta <- theta[i]
         left <- left
         right <- right
@@ -271,13 +271,13 @@ EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_corr
         return(list(up_val = up_val, low_val = low_val, up_iter = upiter, low_iter = lowiter))
     }
     looptm <- proc.time() - ptm
-
+    
     up_val <- purrr::map_dbl(loop_obj, "up_val")
     low_val <- purrr::map_dbl(loop_obj, "low_val")
-
+    
     up_iter <- purrr::map_int(loop_obj, "up_iter")
     low_iter <- purrr::map_int(loop_obj, "low_iter")
-
+    
     return(list(up_predicted = up_val, low_predicted = low_val, time = looptm, up_iter = up_iter, low_iter = low_iter))
 }
 
@@ -288,19 +288,22 @@ EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_corr
 #' This method calls three types of confidence intervals -
 #' predictive residuals bootstrap, residual resampling bootstrap or empirical likelihood.
 #'
-#' @param obj A \code{NOIS_fit}.
+#' @param NOIS_fit A \code{NOIS_fit}.
 #' @param conf_type The type of confidence interval construction. Valid types are \code{c('pred_BS', 'resid_BS', 'EL')}.
 #' @param ... Additional parameters passed to
 #' \code{\link{pred_resid_BS_confint}}, \code{\link{resid_BS_confint}}, \code{\link{EL_confint}}.
 #' @family NOIS confidence bands
 #' @export
-NOIS_confint <- function(obj, conf_type = "pred_BS", ...) {
+NOIS_confint <- function(NOIS_fit, conf_type = "pred_BS", ...) {
+    if (class(NOIS_fit) != "NOIS_fit") {
+        stop("Input must be a NOIS_fit")
+    }
     if (conf_type == "pred_BS") {
-        pred_resid_BS_confint(obj, ...)
+        pred_resid_BS_confint(NOIS_fit, ...)
     } else if (conf_type == "resid_BS") {
-        resid_BS_confint(obj, ...)
+        resid_BS_confint(NOIS_fit, ...)
     } else if (conf_type == "EL") {
-        EL_confint(obj, ...)
+        EL_confint(NOIS_fit, ...)
     }
 }
 
