@@ -5,8 +5,8 @@
 \title{Empirical likelihood pointwise confidence bands for '\code{NOIS_fit}' objects}
 \usage{
 EL_confint(NOIS_fit, conf_level = 0.05, fit_type = "NOIS",
-  bias_correct = T, parallel = F, calib_type = "F", left = 0,
-  right = 20, maxit = 50)
+  bias_correct = T, parallel = F, conf_index = 1:length(NOIS_fit$x),
+  calib_type = "F", left = 0, right = 20, maxit = 50)
 }
 \arguments{
 \item{NOIS_fit}{A \code{NOIS_fit}.}
@@ -19,6 +19,8 @@ Valid types are \code{c('NOIS', 'regular')}, where regular is the non-robust fit
 \item{bias_correct}{A logical indicating usage of bias correction.}
 
 \item{parallel}{A logical indicating parallel computation. A backend must be registered first.}
+
+\item{conf_index}{A vector of positions specifying where the confidence bands should be calculated.}
 
 \item{calib_type}{The distribution for calibrating Wilks' theorem. Valid types are \code{c('F', 'chisq')}.}
 

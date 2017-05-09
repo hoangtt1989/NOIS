@@ -6,6 +6,7 @@
 #' Valid types are \code{c('NOIS', 'regular')}, where regular is the non-robust fit..
 #' @param bias_correct A logical indicating usage of bias correction.
 #' @param parallel A logical indicating parallel computation. A backend must be registered first.
+#' @param conf_index A vector of positions specifying where the confidence bands should be calculated.
 #' @param B Number of bootstrap replicates.
 #' @return A list with the following components.
 #' \item{\code{up_predicted}}{The upper band.}
@@ -13,8 +14,8 @@
 #' @family NOIS confidence bands
 #' @importFrom foreach %dopar%
 #' @export
-pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_correct = T, parallel = F, B = 500) {
-    x <- NOIS_fit$x
+pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_correct = T, parallel = F, conf_index = 1:length(NOIS_fit$x), B = 500) {
+    x <- NOIS_fit$x[conf_index]
     if (fit_type == "NOIS") {
         y <- NOIS_fit$y_adj
         bandwidth <- NOIS_fit$pool_h
@@ -32,6 +33,8 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
     } else {
         stop("Must supply valid fit_type: NOIS or regular.")
     }
+    y <- y[conf_index]
+    func_est <- func_est[conf_index]
 
     cvloop <- function(input, x, y, bandwidth) {
         est_val <- nwestimator(x[input], x[-input], y[-input], bandwidth)
@@ -118,8 +121,8 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
 #' @family NOIS confidence bands
 #' @importFrom foreach %dopar%
 #' @export
-resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_correct = T, parallel = F, B = 500) {
-    x <- NOIS_fit$x
+resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_correct = T, parallel = F, conf_index = 1:length(NOIS_fit$x), B = 500) {
+    x <- NOIS_fit$x[conf_index]
     if (fit_type == "NOIS") {
         y <- NOIS_fit$y_adj
         bandwidth <- NOIS_fit$pool_h
@@ -137,6 +140,8 @@ resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bia
     } else {
         stop("Must supply valid fit_type: NOIS or regular.")
     }
+    y <- y[conf_index]
+    func_est <- func_est[conf_index]
 
     resid <- y - func_est
     center_resid <- resid - mean(resid)
@@ -210,6 +215,7 @@ NOIS_logelr_root <- function(yvals, hyp_theta, gkcalc, conf_level = 0.05, invis 
 #' Valid types are \code{c('NOIS', 'regular')}, where regular is the non-robust fit..
 #' @param bias_correct A logical indicating usage of bias correction.
 #' @param parallel A logical indicating parallel computation. A backend must be registered first.
+#' @param conf_index A vector of positions specifying where the confidence bands should be calculated.
 #' @param left The left summand for the root finding procedure.
 #' @param right The right summand for the root finding procedure.
 #' @param maxit The maximum number of iterations for each root finding procedure.
@@ -222,14 +228,14 @@ NOIS_logelr_root <- function(yvals, hyp_theta, gkcalc, conf_level = 0.05, invis 
 #' \item{\code{low_iter}}{Number of iterations for the lower band.}
 #' @family NOIS confidence bands
 #' @export
-EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_correct = T, parallel = F, calib_type = "F", left = 0, right = 20,
+EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_correct = T, parallel = F, conf_index = 1:length(NOIS_fit$x), calib_type = "F", left = 0, right = 20,
     maxit = 50) {
-    x <- NOIS_fit$x
+    x <- NOIS_fit$x[conf_index]
     if (fit_type == "NOIS") {
         bandwidth <- NOIS_fit$pool_h
         y <- NOIS_fit$y_adj
         if (bias_correct == TRUE) {
-            nwfit <- NOIS_fit$pool_fit
+            nwfit <- NOIS_fit$pool_fit[conf_index]
             theta <- NOIS_fit$bias_pool_fit
         } else {
             theta <- NOIS_fit$pool_fit
@@ -238,7 +244,7 @@ EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_corr
         bandwidth <- NOIS_fit$first_h
         y <- NOIS_fit$y
         if (bias_correct == TRUE) {
-            nwfit <- NOIS_fit$first_fit
+            nwfit <- NOIS_fit$first_fit[conf_index]
             theta <- NOIS_fit$bias_first_fit
         } else {
             theta <- NOIS_fit$first_fit
@@ -246,6 +252,8 @@ EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_corr
     } else {
         stop("Must supply valid fit_type: NOIS or regular.")
     }
+    y <- y[conf_index]
+    theta <- theta[conf_index]
 
     if (parallel == F) {
         `%fun%` <- foreach::`%do%`
