@@ -303,7 +303,7 @@ NOIS_df <- function(NOIS_fit) {
     }
     outlier_index <- rep(FALSE, length(NOIS_fit$x))
     outlier_index[NOIS_fit$pool_outlier] <- TRUE
-    df <- with(NOIS_fit, tibble::data_frame(x = x, y = y, y_adj = y_adj, fit = pool_fit, bias_fit = bias_pool_fit, outlier = x %in% x[pool_outlier]))
+    df <- with(NOIS_fit, tibble::data_frame(x = x, y = y, y_adj = y_adj, fit = pool_fit, bias_fit = bias_pool_fit, outlier = outlier_index))
 }
 
 #' Create a plot highlighting the outliers and a NOIS curve.
