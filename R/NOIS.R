@@ -278,7 +278,7 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
 #' @param ... Not used.
 #' @export
 print.NOIS_fit <- function(x, ...) {
-    cat("Number of detected outliers =", length(x$pool_outlier), "\nNumber of observations =", length(x$y), "\nTime =", x$time, "\nConvergence =",
+    cat("Number of detected outliers =", length(x$pool_outlier), "\nNumber of observations =", length(x$y), "\nTime =", x$time[3], "\nConvergence =",
         all(as.logical(x$converged)), "\nMSE =", mean((x$y_adj - x$pool_fit)^2), "\nBias corrected MSE =", mean((x$y_adj - x$bias_pool_fit)^2),
         "\nFirst optimal bandwidth =", x$first_h, "\nPooled optimal bandwidth =", x$pool_h)
 }
@@ -301,6 +301,8 @@ NOIS_df <- function(NOIS_fit) {
     if (class(NOIS_fit) != "NOIS_fit") {
         stop("Input must be a NOIS_fit")
     }
+    outlier_index <- rep(FALSE, length(NOIS_fit$x))
+    outlier_index[NOIS_fit$pool_outlier] <- TRUE
     df <- with(NOIS_fit, tibble::data_frame(x = x, y = y, y_adj = y_adj, fit = pool_fit, bias_fit = bias_pool_fit, outlier = x %in% x[pool_outlier]))
 }
 
