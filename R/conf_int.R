@@ -19,22 +19,24 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
     if (fit_type == "NOIS") {
         y <- NOIS_fit$y_adj
         bandwidth <- NOIS_fit$pool_h
-        func_est <- NOIS_fit$pool_fit
+        theta <- NOIS_fit$pool_fit
         if (bias_correct == T) {
-            func_est <- NOIS_fit$bias_pool_fit
+            theta <- NOIS_fit$bias_pool_fit
+            nw_est <- NOIS_fit$pool_fit[conf_index]
         }
     } else if (fit_type == "regular") {
         y <- NOIS_fit$y
         bandwidth <- NOIS_fit$first_h
-        func_est <- NOIS_fit$first_fit
+        theta <- NOIS_fit$first_fit
         if (bias_correct == T) {
-            func_est <- NOIS_fit$bias_first_fit
+            theta <- NOIS_fit$bias_first_fit
+            nw_est <- NOIS_fit$first_fit[conf_index]
         }
     } else {
         stop("Must supply valid fit_type: NOIS or regular.")
     }
     y <- y[conf_index]
-    func_est <- func_est[conf_index]
+    theta <- theta[conf_index]
 
     cvloop <- function(input, x, y, bandwidth) {
         est_val <- nwestimator(x[input], x[-input], y[-input], bandwidth)
@@ -48,21 +50,13 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
     loo_est <- sapply(1:length(x), cvloop, x, y, bandwidth)
 
     if (bias_correct == TRUE) {
-        if (fit_type == "NOIS") {
-            loo_est <- sapply(1:length(x), biascvloop, x, y, NOIS_fit$pool_fit, bandwidth)
-        } else if (fit_type == "regular") {
-            loo_est <- sapply(1:length(x), biascvloop, x, y, NOIS_fit$first_fit, bandwidth)
-        }
+      loo_est <- sapply(1:length(x), biascvloop, x, y, nw_est, bandwidth)
     }
 
     sd_estimator <- function(x, y, h, kernel_fit) {
         M_x <- sapply(1:length(x), cvloop, x, y^2, h)
         if (bias_correct == TRUE) {
-            if (fit_type == "NOIS") {
-                M_x <- sapply(1:length(x), biascvloop, x, y, NOIS_fit$pool_fit, bandwidth, shift_sq = TRUE)
-            } else if (fit_type == "regular") {
-                M_x <- sapply(1:length(x), biascvloop, x, y, NOIS_fit$first_fit, bandwidth, shift_sq = TRUE)
-            }
+            M_x <- sapply(1:length(x), biascvloop, x, y, nw_est, bandwidth, shift_sq = TRUE)
         }
         sd_est <- sqrt(M_x - kernel_fit^2)
     }
@@ -73,10 +67,10 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
 
     center_resid <- fitted_resid - mean(fitted_resid)
 
-    resids <- function(x, func_est, first_resid, sd_est, bandwidth) {
+    resids <- function(x, theta, first_resid, sd_est, bandwidth) {
         npts <- length(x)
         resid.resamp <- sample(first_resid, size = npts, replace = TRUE)
-        newy <- func_est + sd_est * resid.resamp
+        newy <- theta + sd_est * resid.resamp
         newfit <- nwvector(x, newy, bandwidth = bandwidth)
         if (bias_correct == TRUE) {
             newfit <- biasnwvector(x, newy, newfit, bandwidth)
@@ -88,24 +82,24 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
     if (parallel == T) {
         `%fun%` <- doRNG::`%dorng%`
         ret <- foreach::foreach(i = 1:B, .combine = cbind) %fun% {
-            loop_ret <- resids(x, func_est, center_resid, sd_est, bandwidth)
+            loop_ret <- resids(x, theta, center_resid, sd_est, bandwidth)
             return(loop_ret)
         }
         resids_boots <- ret
     } else {
-        resids_boots <- replicate(B, resids(x, func_est, center_resid, sd_est, bandwidth))
+        resids_boots <- replicate(B, resids(x, theta, center_resid, sd_est, bandwidth))
     }
 
     roots <- apply(resids_boots, 2, function(x) {
-        func_est - x
+        theta - x
     })
 
     q_lower <- apply(roots, 1, stats::quantile, probs = conf_level/2)
     q_upper <- apply(roots, 1, stats::quantile, probs = (1 - conf_level/2))
 
 
-    cis.lower <- func_est + q_lower
-    cis.upper <- func_est + q_upper
+    cis.lower <- theta + q_lower
+    cis.upper <- theta + q_upper
 
     return(list(low_predicted = cis.lower, up_predicted = cis.upper, sd = sd_est, fitted_resid = fitted_resid, center_resid = center_resid))
 }
