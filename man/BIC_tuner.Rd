@@ -10,11 +10,13 @@ BIC_tuner(data, q_tst = 1:floor(nrow(data)/3), bias_correct = T,
 \arguments{
 \item{data}{An input \code{data.frame}.}
 
+\item{q_tst}{The grid of test values for the pooled q.}
+
 \item{bias_correct}{A logical indicating bias correction.}
 
 \item{parallel}{A logical indicating parallel computation. A parallel backend must be registered.}
 
-\item{grid_div}{The grid of test values for the pooled q.}
+\item{...}{Additional arguments passed to \code{NOIS_fit}.}
 }
 \value{
 A list with the following components.
@@ -26,5 +28,5 @@ A list with the following components.
 Find the optimal number of detected outliers for NOIS using modified BIC
 }
 \seealso{
-Other NOIS BIC functions.: \code{\link{BIC.NOIS_fit}}
+Other NOIS BIC functions.: \code{\link{BIC_NOIS}}
 }

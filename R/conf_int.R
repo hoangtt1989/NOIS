@@ -97,8 +97,8 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
         func_est - x
     })
 
-    q_lower <- apply(roots, 1, quantile, probs = conf_level/2)
-    q_upper <- apply(roots, 1, quantile, probs = (1 - conf_level/2))
+    q_lower <- apply(roots, 1, stats::quantile, probs = conf_level/2)
+    q_upper <- apply(roots, 1, stats::quantile, probs = (1 - conf_level/2))
 
 
     cis.lower <- func_est + q_lower
@@ -168,8 +168,8 @@ resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bia
         func_est - x
     })
 
-    q_lower <- apply(roots, 1, quantile, probs = conf_level/2)
-    q_upper <- apply(roots, 1, quantile, probs = (1 - conf_level/2))
+    q_lower <- apply(roots, 1, stats::quantile, probs = conf_level/2)
+    q_upper <- apply(roots, 1, stats::quantile, probs = (1 - conf_level/2))
 
 
     cis.lower <- func_est + q_lower
@@ -190,9 +190,9 @@ NOIS_logelr_root <- function(yvals, hyp_theta, gkcalc, conf_level = 0.05, invis 
     npts <- dim(score_vec)[1]
     elm <- emplik(score_vec)
     if (calib_type == "chisq") {
-        thresh <- qchisq(1 - conf_level, df = 1)
+        thresh <- stats::qchisq(1 - conf_level, df = 1)
     } else if (calib_type == "F") {
-        thresh <- qf(1 - conf_level, 1, length(score_vec) - 1)
+        thresh <- stats::qf(1 - conf_level, 1, length(score_vec) - 1)
     } else {
         stop("Must supply a valid calibration type (F or chisq)")
     }
@@ -268,9 +268,9 @@ EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_corr
         mletheta <- theta[i]
         left <- left
         right <- right
-        nwupsoln <- uniroot(rootfun, c(mletheta + left, mletheta + right), check.conv = TRUE, maxiter = maxit)
+        nwupsoln <- stats::uniroot(rootfun, c(mletheta + left, mletheta + right), check.conv = TRUE, maxiter = maxit)
         up_val <- nwupsoln$root
-        nwlowsoln <- uniroot(rootfun, c(mletheta - left, mletheta - right), check.conv = TRUE, maxiter = maxit)
+        nwlowsoln <- stats::uniroot(rootfun, c(mletheta - left, mletheta - right), check.conv = TRUE, maxiter = maxit)
         low_val <- nwlowsoln$root
         upiter <- nwupsoln$iter
         lowiter <- nwlowsoln$iter
@@ -300,7 +300,7 @@ EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_corr
 #' \code{\link{pred_resid_BS_confint}}, \code{\link{resid_BS_confint}}, \code{\link{EL_confint}}.
 #' @family NOIS confidence bands
 #' @export
-confint.NOIS_fit <- function(obj, conf_type = "pred_BS", ...) {
+NOIS_confint <- function(obj, conf_type = "pred_BS", ...) {
     if (conf_type == "pred_BS") {
         pred_resid_BS_confint(obj, ...)
     } else if (conf_type == "resid_BS") {

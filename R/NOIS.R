@@ -10,23 +10,25 @@ qdet <- function(local_q = 0.1, nz) {
 #' Find the optimal number of detected outliers for NOIS using modified BIC
 #'
 #' @param data An input \code{data.frame}.
-#' @param grid_div The grid of test values for the pooled q.
+#' @param q_tst The grid of test values for the pooled q.
 #' @param bias_correct A logical indicating bias correction.
 #' @param parallel A logical indicating parallel computation. A parallel backend must be registered.
+#' @param ... Additional arguments passed to \code{NOIS_fit}.
 #' @return A list with the following components.
 #' \item{\code{q_tst}}{The grid of test values.}
 #' \item{\code{min_q}}{The optimal number of detected outliers.}
 #' \item{\code{BIC_vals}}{The individual outputs from \code{BIC.NOIS_fit}.}
-#'
 #' @family NOIS BIC functions.
+#' @importFrom foreach %dopar%
+#' @importFrom foreach %do%
 #' @export
 BIC_tuner <- function(data, q_tst = 1:floor(nrow(data)/3), bias_correct = T, parallel = F, ...) {
 
-    `%fun%` <- ifelse(parallel, `%dopar`, `%do`)
+    `%fun%` <- ifelse(parallel, `%dopar%`, `%do%`)
 
-    BIC_fits <- foreach(i = 1:length(q_tst)) %fun% {
+    BIC_fits <- foreach::foreach(i = 1:length(q_tst)) %fun% {
         fit <- NOIS_fit(data, pool_q = q_tst[i], ...)
-        BIC_val <- BIC(fit, bias_correct = T)
+        BIC_val <- BIC_NOIS(fit, bias_correct = T)
         return(BIC_val)
     }
 
@@ -48,7 +50,7 @@ BIC_tuner <- function(data, q_tst = 1:floor(nrow(data)/3), bias_correct = T, par
 #' \item{\code{df}}{The estimated degrees of freedom.}
 #' @family NOIS BIC functions.
 #' @export
-BIC.NOIS_fit <- function(NOIS_fit, bias_correct = T) {
+BIC_NOIS <- function(NOIS_fit, bias_correct = T) {
     npts <- length(NOIS_fit$y)
     smooth_df <- do.call(rbind, lapply(1:npts, function(ind) {
         tmp <- gausskern(NOIS_fit$x[ind] - NOIS_fit$x, NOIS_fit$pool_h)

@@ -5,7 +5,7 @@
 \title{Partitioned cross-validation}
 \usage{
 PCV_grid(x, y, hgrid = seq(from = 0.05, to = 3, length.out = 100),
-  g = floor(length(x)/5))
+  g = floor(length(x)/5), weight_probs = c(0.05, 0.95))
 }
 \description{
 Evaluate partitioned cross-validation (PCV) for the Nadaraya-Watson estimator over a grid

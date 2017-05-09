@@ -29,7 +29,7 @@ LOOCV <- function(x, y, bandwidth, samp_quant) {
 #' @family NOIS CV functions
 #' @export
 LOOCV_grid <- function(x, y, hgrid = seq(from = 0.05, to = 3, length.out = 80), weight_probs = c(0.05, 0.95)) {
-    samp_quant <- quantile(x, weight_probs)
+    samp_quant <- stats::quantile(x, weight_probs)
     cvs <- sapply(hgrid, function(input) {
         LOOCV(x, y, input, samp_quant)
     })
@@ -68,7 +68,7 @@ MCV <- function(nextmx, nextmy, firstmx, firstmy, bandwidth, samp_quant) {
 #' @family NOIS CV functions
 #' @export
 MCV_grid <- function(x, y, m = 0.6, a = 0.75, b = 10, eps0 = 1/175, gridlen = 100, weight_probs = c(0.05, 0.95)) {
-    samp_quant <- quantile(x, probs = weight_probs)
+    samp_quant <- stats::quantile(x, probs = weight_probs)
     m = floor(m * length(x))
     firstmx <- x[1:m]
     firstmy <- y[1:m]
@@ -86,7 +86,7 @@ MCV_grid <- function(x, y, m = 0.6, a = 0.75, b = 10, eps0 = 1/175, gridlen = 10
 
 #' PCV
 #' @keywords internal
-PCV <- function(data, bandwidth, g) {
+PCV <- function(data, bandwidth, g, samp_quant) {
     n <- nrow(data)
     dat_num <- g * floor(n/g)
     dat_sub <- data[1:dat_num, ]
@@ -98,7 +98,7 @@ PCV <- function(data, bandwidth, g) {
     })
 
     cv_err <- sapply(dat_grp, function(dat_in) {
-        ret <- cvfunction(dat_in$x, dat_in$y, bandwidth)
+        ret <- LOOCV(dat_in$x, dat_in$y, bandwidth, samp_quant)
     })
 
     pcv_err <- mean(cv_err)
@@ -109,10 +109,11 @@ PCV <- function(data, bandwidth, g) {
 #' Evaluate partitioned cross-validation (PCV) for the Nadaraya-Watson estimator over a grid
 #' @family NOIS CV functions
 #' @export
-PCV_grid <- function(x, y, hgrid = seq(from = 0.05, to = 3, length.out = 100), g = floor(length(x)/5)) {
+PCV_grid <- function(x, y, hgrid = seq(from = 0.05, to = 3, length.out = 100), g = floor(length(x)/5), weight_probs = c(0.05, 0.95)) {
+    samp_quant <- stats::quantile(x, probs = weight_probs)
     data <- data.frame(x = x, y = y)
     cvs <- sapply(hgrid, function(input) {
-        PCV(data, input, g)
+        PCV(data, input, g, samp_quant)
     })
     min_index <- which.min(cvs)
     min_h <- hgrid[min_index]

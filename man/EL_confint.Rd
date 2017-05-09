@@ -40,7 +40,7 @@ A list with the following components.
 Returns EL confidence bands.
 }
 \seealso{
-Other NOIS confidence bands: \code{\link{confint.NOIS_fit}},
+Other NOIS confidence bands: \code{\link{NOIS_confint}},
   \code{\link{pred_resid_BS_confint}},
   \code{\link{resid_BS_confint}}
 }

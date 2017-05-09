@@ -31,6 +31,6 @@ Residual resampling bootstrap pointwise confidence bands for '\code{NOIS_fit}' o
 }
 \seealso{
 Other NOIS confidence bands: \code{\link{EL_confint}},
-  \code{\link{confint.NOIS_fit}},
+  \code{\link{NOIS_confint}},
   \code{\link{pred_resid_BS_confint}}
 }
