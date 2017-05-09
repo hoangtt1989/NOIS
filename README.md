@@ -1,32 +1,27 @@
----
-title: "NOIS"
-author: "Hoang Tran"
-date: "5/9/2017"
-output: github_document
----
+NOIS
+================
+Hoang Tran
+5/9/2017
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-
-```
-
-## Non-Parametric Outlier Identification and Smoothing.
+Non-Parametric Outlier Identification and Smoothing.
+----------------------------------------------------
 
 This package implements outlier identification and smoothing for non-linear and time series data.
 
-## Installation
+Installation
+------------
 
-```{r, eval=FALSE}
+``` r
 install.packages('devtools')
 devtools::install_github('hoangtt1989/NOIS')
 ```
 
-
-## Simulated Data Example
+Simulated Data Example
+----------------------
 
 We generate a random sine curve and perturb it with outliers.
 
-```{r}
+``` r
 library(ggplot2)
 library(NOIS)
 set.seed(123)
@@ -48,15 +43,27 @@ data <- data.frame(x = xt, y = yt, true_outlier = xt %in% xt_outliers)
 ggplot(data) + geom_point(aes(x, y, color = true_outlier))
 ```
 
+![](README_files/figure-markdown_github/unnamed-chunk-2-1.png)
+
 We use NOIS to detect outliers and estimate the underlying curve.
 
-```{r}
+``` r
 sine_fit <- NOIS_fit(data, CV_method = 'LOOCV', pool_q = nout)
 sine_fit
 ```
 
+    ## Number of detected outliers = 20 
+    ## Number of observations = 200 
+    ## Convergence = TRUE 
+    ## MSE = 0.7681321 
+    ## Bias corrected MSE = 0.7573429 
+    ## First optimal bandwidth = 1.767722 
+    ## Pooled optimal bandwidth = 0.4234177
+
 We plot the estimated curve and mark the detected outliers. NOIS correctly detects all of the outliers.
 
-```{r}
+``` r
 outlier_plot(sine_fit)
 ```
+
+![](README_files/figure-markdown_github/unnamed-chunk-4-1.png)
