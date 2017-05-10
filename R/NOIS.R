@@ -105,7 +105,6 @@ BIC_NOIS <- function(NOIS_fit, bias_correct = T) {
 #' For integers \eqn{\ge 1} this is the number of points detected as outliers.}
 #' \item{\code{pool_nonout}}{The positions of the clean observations.}
 #' \item{\code{x}}{Original 'x' values.}
-#' \item{\code{local_y_adj}}{Unpooled adjusted 'y' values.}
 #' \item{\code{y_adj}}{Pooled adjusted 'y' values.}
 #' \item{\code{y}}{Original 'x' values.}
 #' \item{\code{first_h}}{Bandwidth used for first (non-robust) kernel smoothing fit.}
@@ -157,9 +156,10 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
 
     # initializing vectors, parameters
     nn <- nrow(data)
-    cond_check <- rep(1, nn)
+    cond_check <- rep(0, nn)
+    # gamma_curr <- rep(0, nn)
     gamma_curr <- matrix(0, nrow = nn, ncol = nn)
-    yy_adj <- matrix(0, nrow = nn, ncol = nn)
+    # yy_adj <- matrix(0, nrow = nn, ncol = nn)
     local_fit <- rep(0, nn)
     qq <- rep(0, nn)
     converged <- rep(0, nn)
@@ -196,30 +196,45 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
     ptm <- proc.time()
     for (jj in 1:nn) {
 
-        kernlist <- gausskern(xx[jj] - xx, first_h)
+        xx_inner <- xx[jj]
+
+        kernlist <- gausskern(xx_inner - xx, first_h)
         nz_ind <- which(kernlist != 0 & kernlist >= 1e-20)
         kern_nz <- kernlist[nz_ind]
         kern_nzsqrt <- sqrt(kern_nz)
         kern_nzsqrtinv <- 1/kern_nzsqrt
         qq[jj] <- qdet(local_q, kern_nz)
 
+        gamma_inner <- rep(0, nn)
+        qq_inner <- qq[jj]
+
         for (ii in 1:maxit) {
             gamma_next <- rep(0, nn)
-            yy_adj[, jj] <- yy - gamma_curr[, jj]
-            local_fit[jj] <- nwestimator(xx[jj], xx, yy_adj[, jj], first_h)
-            rr <- kern_nzsqrt * ((yy - local_fit[jj])[nz_ind])
-            gamma_next[nz_ind] <- kern_nzsqrtinv * quantile_thresh(rr, qq[jj])
-            cond_check[jj] <- max(abs(gamma_next - gamma_curr[, jj]))
-            gamma_curr[, jj] <- gamma_next
+            yy_adj <- yy - gamma_inner
+            # yy_adj[, jj] <- yy - gamma_curr[, jj]
+            local_inner <- nwestimator(xx_inner, xx, yy_adj, first_h)
+            # local_fit[jj] <- nwestimator(xx[jj], xx, yy_adj[, jj], first_h)
+            rr <- kern_nzsqrt * ((yy - local_inner))[nz_ind]
+            # rr <- kern_nzsqrt * ((yy - local_fit[jj])[nz_ind])
+            gamma_next[nz_ind] <- kern_nzsqrtinv * quantile_thresh(rr, qq_inner)
+            # gamma_next[nz_ind] <- kern_nzsqrtinv * quantile_thresh(rr, qq[jj])
+            cond_inner <- max(abs(gamma_next - gamma_inner))
+            gamma_inner <- gamma_next
 
-            if (max(abs(cond_check[jj])) <= tol) {
-                converged[jj] <- T
+            if (max(abs(cond_inner)) <= tol) {
+                converge_inner <- T
                 break
             } else {
-                converged[jj] = F
+                converge_inner = F
             }
         }
+
+        local_fit[jj] <- local_inner
+        gamma_curr[, jj] <- gamma_inner
+        converged[jj] <- converge_inner
+        cond_check[jj] <- cond_inner
         iter[jj] <- ii
+
         if (ii == maxit) {
             warning(paste("Model did not converge at j =", jj))
         }
@@ -272,7 +287,7 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
 
     model_output <- list(local_fit = local_fit, pool_fit = pool_fit, bias_pool_fit = bias_pool_fit, first_fit = nw_ests, bias_first_fit = bias_nw_ests,
         local_gamma = gamma_curr, pool_gamma = gam_val, pool_outlier = gam_ind, local_q = qq, pool_q = pool_q, pool_nonout = pool_nonout,
-        x = xx, local_y_adj = yy_adj, y_adj = pool_y_adj, y = yy, first_h = first_h, pool_h = pool_h, first_hgrid = first_hgrid, pool_hgrid = pool_hgrid,
+        x = xx, y_adj = pool_y_adj, y = yy, first_h = first_h, pool_h = pool_h, first_hgrid = first_hgrid, pool_hgrid = pool_hgrid,
         iter = iter, time = etm, converged = converged, cond_check = cond_check)
     class(model_output) <- "NOIS_fit"
     model_output

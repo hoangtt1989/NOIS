@@ -24,5 +24,5 @@ test_that('Detected outliers match true outliers', {
 })
 
 test_that('BIC tuning', {
-  expect_equal(BIC_tuner(data)$min_q, 13)
+  expect_equal(BIC_tuner(data, CV_method = 'MCV')$min_q, 13)
 })
