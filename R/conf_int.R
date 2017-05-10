@@ -252,7 +252,7 @@ EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_corr
 
     ptm <- proc.time()
     loop_obj <- foreach::foreach(i = 1:length(x)) %fun% {
-        gkcalc <- as.matrix(qnorm(x - x[i], 0, bandwidth))
+        gkcalc <- as.matrix(dnorm(x - x[i], 0, bandwidth))
         # gkcalc <- as.matrix(gausskern(x - x[i], bandwidth))
         rootfun <- function(hyp_val) {
             if (bias_correct == FALSE) {

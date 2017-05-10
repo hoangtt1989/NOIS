@@ -57,7 +57,7 @@ BIC_NOIS <- function(NOIS_fit, bias_correct = T) {
     npts <- length(NOIS_fit$y)
     smooth_df <- do.call(rbind, lapply(1:npts, function(ind) {
         # tmp <- gausskern(NOIS_fit$x[ind] - NOIS_fit$x, NOIS_fit$pool_h)
-        tmp <- qnorm(NOIS_fit$x[ind] - NOIS_fit$x, 0, NOIS_fit$pool_h)
+        tmp <- dnorm(NOIS_fit$x[ind] - NOIS_fit$x, 0, NOIS_fit$pool_h)
         ret <- tmp/sum(tmp)
         return(ret)
     }))
@@ -198,7 +198,7 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
 
         xx_inner <- xx[jj]
 
-        kernlist <- qnorm(xx_inner - xx, 0, first_h)
+        kernlist <- dnorm(xx_inner - xx, 0, first_h)
         # kernlist <- gausskern(xx_inner - xx, first_h)
         nz_ind <- which(kernlist != 0 & kernlist >= 1e-20)
         kern_nz <- kernlist[nz_ind]

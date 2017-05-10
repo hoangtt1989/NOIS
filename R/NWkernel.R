@@ -6,7 +6,7 @@ gausskern <- function(input, bandwidth) {
 }
 #' @keywords internal
 nwestimator <- function(inputval, xvals, yvals, bandwidth) {
-    kernel_val <- qnorm(inputval - xvals, 0, bandwidth)
+    kernel_val <- dnorm(inputval - xvals, 0, bandwidth)
     # kernel_val <- gausskern(inputval - xvals, bandwidth)
     est_value <- sum(kernel_val * yvals)/sum(kernel_val)
     return(est_value)
@@ -21,7 +21,7 @@ nwvector <- function(x, y, bandwidth) {
 #' @keywords internal
 biasnwestimator <- function(inputval, xvals, yvals, bandwidth, inputnw, nwvals, shift_sq = FALSE) {
     # kernel_val <- gausskern(inputval - xvals, bandwidth)
-    kernel_val <- qnorm(inputval - xvals, 0, bandwidth)
+    kernel_val <- dnorm(inputval - xvals, 0, bandwidth)
     shift <- yvals - nwvals + inputnw
     if (shift_sq == TRUE) {
         shift <- shift^2
