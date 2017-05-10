@@ -135,6 +135,9 @@ BIC_NOIS <- function(NOIS_fit, bias_correct = T) {
 NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL, pool_h = NULL, local_q = 0.1, pool_q = 0.1, tol = 1e-07,
     maxit = 200, ...) {
 
+    yy <- data[[y]]
+    xx <- data[[x]]
+
     # checking inputs
     if (!is.data.frame(data)) {
         stop("data must be a data.frame")
@@ -148,6 +151,9 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
     if (pool_q <= 0) {
         stop("pool_q must be greater than 0")
     }
+    if (!all(is.finite(xx)) | !all(is.finite(yy))) {
+        stop("Bad values in either x or y")
+    }
 
     # initializing vectors, parameters
     nn <- nrow(data)
@@ -160,8 +166,7 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
     iter <- rep(0, nn)
     cond_check <- rep(1, nn)
 
-    yy <- data[[y]]
-    xx <- data[[x]]
+
     if (CV_method %in% c("LOOCV", "MCV", "PCV")) {
         if (CV_method == "LOOCV") {
             first_CV <- LOOCV_grid(xx, yy, ...)

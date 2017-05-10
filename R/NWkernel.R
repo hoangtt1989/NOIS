@@ -12,9 +12,9 @@ nwestimator <- function(inputval, xvals, yvals, bandwidth) {
 }
 #' @keywords internal
 nwvector <- function(x, y, bandwidth) {
-    nw_ests <- sapply(x, function(input) {
+    nw_ests <- vapply(x, function(input) {
         nwestimator(input, x, y, bandwidth)
-    })
+    }, numeric(1))
     return(nw_ests)
 }
 #' @keywords internal
@@ -34,7 +34,7 @@ biasnwvector <- function(x, y, nwvals, bandwidth) {
         out <- biasnwestimator(x[input], x, y, bandwidth, nwvals[input], nwvals)
         return(out)
     }
-    nw_ests <- sapply(index, nwfunc)
+    nw_ests <- vapply(index, nwfunc, numeric(1))
     return(nw_ests)
 }
 
