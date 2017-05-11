@@ -205,11 +205,11 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
         # kern_nzsqrtinv <- 1/kern_nzsqrt
         kernlist <- dnorm(xx_inner - xx, 0, first_h)
         nz_ind <- which(kernlist != 0 & kernlist >= 1e-20)
-        kern_nz <- rep(0, npts)
+        kern_nz <- rep(0, nn)
         kern_nz[nz_ind] <- kernlist[nz_ind]
-        kern_nzsqrt <- rep(0, npts)
+        kern_nzsqrt <- rep(0, nn)
         kern_nzsqrt[nz_ind] <- sqrt(kern_nz)[nz_ind]
-        kern_nzsqrtinv <- rep(0, npts)
+        kern_nzsqrtinv <- rep(0, nn)
         kern_nzsqrtinv[nz_ind] <- 1/kern_nzsqrt[nz_ind]
         qq[jj] <- qdet(local_q, kern_nz)
 
