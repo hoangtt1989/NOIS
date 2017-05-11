@@ -198,23 +198,32 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
 
         xx_inner <- xx[jj]
 
+        # kernlist <- dnorm(xx_inner - xx, 0, first_h)
+        # nz_ind <- which(kernlist != 0 & kernlist >= 1e-20)
+        # kern_nz <- kernlist[nz_ind]
+        # kern_nzsqrt <- sqrt(kern_nz)
+        # kern_nzsqrtinv <- 1/kern_nzsqrt
         kernlist <- dnorm(xx_inner - xx, 0, first_h)
-        # kernlist <- gausskern(xx_inner - xx, first_h)
         nz_ind <- which(kernlist != 0 & kernlist >= 1e-20)
-        kern_nz <- kernlist[nz_ind]
-        kern_nzsqrt <- sqrt(kern_nz)
-        kern_nzsqrtinv <- 1/kern_nzsqrt
+        kern_nz <- rep(0, npts)
+        kern_nz[nz_ind] <- kernlist[nz_ind]
+        kern_nzsqrt <- rep(0, npts)
+        kern_nzsqrt[nz_ind] <- sqrt(kern_nz)[nz_ind]
+        kern_nzsqrtinv <- rep(0, npts)
+        kern_nzsqrtinv[nz_ind] <- 1/kern_nzsqrt[nz_ind]
         qq[jj] <- qdet(local_q, kern_nz)
 
         gamma_inner <- rep(0, nn)
         qq_inner <- qq[jj]
 
         for (ii in 1:maxit) {
-            gamma_next <- rep(0, nn)
+            # gamma_next <- rep(0, nn)
             yy_adj <- yy - gamma_inner
             local_inner <- nwestimator(xx_inner, xx, yy_adj, first_h)
-            rr <- kern_nzsqrt * ((yy - local_inner))[nz_ind]
-            gamma_next[nz_ind] <- kern_nzsqrtinv * quantile_thresh(rr, qq_inner)
+            rr <- kern_nzsqrt * (yy - local_inner)
+            # rr <- kern_nzsqrt * ((yy - local_inner))[nz_ind]
+            gamma_next <- kern_nzsqrtinv * quantile_thresh(rr, qq_inner)
+            # gamma_next[nz_ind] <- kern_nzsqrtinv * quantile_thresh(rr, qq_inner)
             cond_inner <- max(abs(gamma_next - gamma_inner))
             gamma_inner <- gamma_next
 
