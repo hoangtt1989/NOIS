@@ -66,6 +66,7 @@ pt
 We use the predictive residuals bootstrap to construct confidence bands.
 
 ```{r}
+# sine_BS <- NOIS_confint(sine_fit, conf_type = 'EL', B = 500, conf_level = .05)
 sine_BS <- NOIS_confint(sine_fit, conf_type = 'pred_BS', B = 500, conf_level = .05)
 sine_df <- NOIS_df(sine_fit) %>%
   mutate(low_conf = sine_BS$low_predicted,

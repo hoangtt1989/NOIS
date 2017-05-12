@@ -289,10 +289,10 @@ EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_corr
         mletheta <- theta[i]
         left <- left
         right <- right
-        nwupsoln <- stats::uniroot(EL_rootfun, c(mletheta + left, mletheta + right), check.conv = TRUE, maxiter = maxit, y = y, gkcalc = gkcalc, calib_type = calib_type, conf_level = conf_level, bias_correct = bias_correct, nwfit = nwfit, i = i)
+        nwupsoln <- stats::uniroot(EL_rootfun, interval = c(mletheta + left, mletheta + right), y = y, gkcalc = gkcalc, calib_type = calib_type, conf_level = conf_level, bias_correct = bias_correct, nwfit = nwfit, i = i, check.conv = TRUE, maxiter = maxit)
         # nwupsoln <- stats::uniroot(EL_rootfun, c(mletheta + left, mletheta + right), check.conv = TRUE, maxiter = maxit)
         up_val <- nwupsoln$root
-        nwlowsoln <- stats::uniroot(EL_rootfun, c(mletheta - left, mletheta - right), check.conv = TRUE, maxiter = maxit, y = y, gkcalc = gkcalc, calib_type = calib_type, conf_level = conf_level, bias_correct = bias_correct, nwfit = nwfit, i = i)
+        nwlowsoln <- stats::uniroot(EL_rootfun, interval = c(mletheta - left, mletheta - right), y = y, gkcalc = gkcalc, calib_type = calib_type, conf_level = conf_level, bias_correct = bias_correct, nwfit = nwfit, i = i, check.conv = TRUE, maxiter = maxit)
         # nwlowsoln <- stats::uniroot(EL_rootfun, c(mletheta - left, mletheta - right), check.conv = TRUE, maxiter = maxit)
         low_val <- nwlowsoln$root
         upiter <- nwupsoln$iter
