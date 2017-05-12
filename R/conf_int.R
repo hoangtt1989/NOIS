@@ -1,3 +1,27 @@
+#' @keywords internal
+pred_resids_func <- function(x, theta, first_resid, sd_est, bandwidth) {
+  npts <- length(x)
+  resid.resamp <- sample(first_resid, size = npts, replace = TRUE)
+  newy <- theta + sd_est * resid.resamp
+  newfit <- nwvector(x, newy, bandwidth = bandwidth)
+  if (bias_correct == TRUE) {
+    newfit <- biasnwvector(x, newy, newfit, bandwidth)
+  }
+  return(newfit)
+}
+
+#' @keywords internal
+cvloop <- function(input, x, y, bandwidth) {
+  est_val <- nwestimator(x[input], x[-input], y[-input], bandwidth)
+  return(est_val)
+}
+
+#' @keywords internal
+biascvloop <- function(input, x, y, nwvals, bandwidth, shift_sq = FALSE) {
+  est_val <- biasnwestimator(x[input], x[-input], y[-input], bandwidth, nwvals[input], nwvals[-input], shift_sq = shift_sq)
+  return(est_val)
+}
+
 #' Predictive residuals bootstrap pointwise confidence bands for '\code{NOIS_fit}' objects
 #'
 #' @param NOIS_fit A \code{NOIS_fit}.
@@ -36,15 +60,6 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
         stop("Must supply valid fit_type: NOIS or regular.")
     }
 
-    cvloop <- function(input, x, y, bandwidth) {
-        est_val <- nwestimator(x[input], x[-input], y[-input], bandwidth)
-        return(est_val)
-    }
-    biascvloop <- function(input, x, y, nwvals, bandwidth, shift_sq = FALSE) {
-        est_val <- biasnwestimator(x[input], x[-input], y[-input], bandwidth, nwvals[input], nwvals[-input], shift_sq = shift_sq)
-        return(est_val)
-    }
-
     loo_est <- sapply(1:length(x), cvloop, x, y, bandwidth)
 
     if (bias_correct == TRUE) {
@@ -65,27 +80,16 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
 
     center_resid <- fitted_resid - mean(fitted_resid)
 
-    resids <- function(x, theta, first_resid, sd_est, bandwidth) {
-        npts <- length(x)
-        resid.resamp <- sample(first_resid, size = npts, replace = TRUE)
-        newy <- theta + sd_est * resid.resamp
-        newfit <- nwvector(x, newy, bandwidth = bandwidth)
-        if (bias_correct == TRUE) {
-            newfit <- biasnwvector(x, newy, newfit, bandwidth)
-        }
-        return(newfit)
-    }
-
 
     if (parallel == T) {
         `%fun%` <- doRNG::`%dorng%`
         ret <- foreach::foreach(i = 1:B, .combine = cbind) %fun% {
-            loop_ret <- resids(x, theta, center_resid, sd_est, bandwidth)
+            loop_ret <- pred_resids_func(x, theta, center_resid, sd_est, bandwidth)
             return(loop_ret)
         }
         resids_boots <- ret
     } else {
-        resids_boots <- replicate(B, resids(x, theta, center_resid, sd_est, bandwidth))
+        resids_boots <- replicate(B, pred_resids_func(x, theta, center_resid, sd_est, bandwidth))
     }
 
     roots <- apply(resids_boots, 2, function(x) {
@@ -103,6 +107,17 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
         center_resid = center_resid))
 }
 
+#' @keywords internal
+resids_func <- function(x, func_est, first_resid, bandwidth) {
+  npts <- length(x)
+  resid.resamp <- sample(first_resid, size = npts, replace = TRUE)
+  newy <- func_est + resid.resamp
+  newfit <- nwvector(x, newy, bandwidth = bandwidth)
+  if (bias_correct == TRUE) {
+    newfit <- biasnwvector(x, newy, newfit, bandwidth)
+  }
+  return(newfit)
+}
 
 
 #' Residual resampling bootstrap pointwise confidence bands for '\code{NOIS_fit}' objects
@@ -138,26 +153,15 @@ resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bia
     center_resid <- resid - mean(resid)
 
 
-    resids <- function(x, func_est, first_resid, bandwidth) {
-        npts <- length(x)
-        resid.resamp <- sample(first_resid, size = npts, replace = TRUE)
-        newy <- func_est + resid.resamp
-        newfit <- nwvector(x, newy, bandwidth = bandwidth)
-        if (bias_correct == TRUE) {
-            newfit <- biasnwvector(x, newy, newfit, bandwidth)
-        }
-        return(newfit)
-    }
-
     if (parallel == T) {
         `%fun%` <- doRNG::`%dorng%`
         ret <- foreach::foreach(i = 1:B, .combine = cbind) %fun% {
-            loop_ret <- resids(x, func_est, center_resid, bandwidth)
+            loop_ret <- resids_func(x, func_est, center_resid, bandwidth)
             return(loop_ret)
         }
         resids_boots <- ret
     } else {
-        resids_boots <- replicate(B, resids(x, func_est, center_resid, bandwidth))
+        resids_boots <- replicate(B, resids_func(x, func_est, center_resid, bandwidth))
     }
 
     roots <- apply(resids_boots, 2, function(x) {
@@ -195,6 +199,17 @@ NOIS_logelr_root <- function(yvals, hyp_theta, gkcalc, conf_level = 0.05, invis 
     }
     funcoutput <- elm$logelr - thresh
     return(funcoutput)
+}
+
+#' @keywords internal
+EL_rootfun <- function(hyp_val) {
+  if (bias_correct == FALSE) {
+    llr <- NOIS_logelr_root(y, hyp_val, gkcalc, calib_type = calib_type, conf_level = conf_level)
+  } else {
+    llr <- NOIS_logelr_root(y, hyp_val, gkcalc, calib_type = calib_type, conf_level = conf_level, nwest_val = nwfit,
+                            index = i)
+  }
+  return(llr)
 }
 
 #' Empirical likelihood pointwise confidence bands for '\code{NOIS_fit}' objects
@@ -254,22 +269,13 @@ EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_corr
     loop_obj <- foreach::foreach(i = 1:length(x)) %fun% {
         gkcalc <- as.matrix(dnorm(x - x[i], 0, bandwidth))
         # gkcalc <- as.matrix(gausskern(x - x[i], bandwidth))
-        rootfun <- function(hyp_val) {
-            if (bias_correct == FALSE) {
-                llr <- NOIS_logelr_root(y, hyp_val, gkcalc, calib_type = calib_type, conf_level = conf_level)
-            } else {
-                llr <- NOIS_logelr_root(y, hyp_val, gkcalc, calib_type = calib_type, conf_level = conf_level, nwest_val = nwfit,
-                  index = i)
-            }
-            return(llr)
-        }
 
         mletheta <- theta[i]
         left <- left
         right <- right
-        nwupsoln <- stats::uniroot(rootfun, c(mletheta + left, mletheta + right), check.conv = TRUE, maxiter = maxit)
+        nwupsoln <- stats::uniroot(EL_rootfun, c(mletheta + left, mletheta + right), check.conv = TRUE, maxiter = maxit)
         up_val <- nwupsoln$root
-        nwlowsoln <- stats::uniroot(rootfun, c(mletheta - left, mletheta - right), check.conv = TRUE, maxiter = maxit)
+        nwlowsoln <- stats::uniroot(EL_rootfun, c(mletheta - left, mletheta - right), check.conv = TRUE, maxiter = maxit)
         low_val <- nwlowsoln$root
         upiter <- nwupsoln$iter
         lowiter <- nwlowsoln$iter

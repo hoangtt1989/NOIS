@@ -5,21 +5,22 @@ weightfun <- function(input, samp_quant) {
     return(output)
 }
 
+#' @keywords internal
+LOOCV_loop <- function(input, x, y, bandwidth) {
+  est_val <- nwestimator(x[input], x[-input], y[-input], bandwidth)
+  sq_error <- (y[input] - est_val)^2
+  return(sq_error)
+}
+
 #' LOOCV
 #' @keywords internal
 LOOCV <- function(x, y, bandwidth, samp_quant) {
     lenx <- length(x)
-    
-    LOOCV_loop <- function(input) {
-        est_val <- nwestimator(x[input], x[-input], y[-input], bandwidth)
-        sq_error <- (y[input] - est_val)^2
-        return(sq_error)
-    }
-    
-    cv <- vapply(1:lenx, LOOCV_loop, numeric(1))
+
+    cv <- vapply(1:lenx, LOOCV_loop, numeric(1), x, y, bandwidth)
     wts <- weightfun(x, samp_quant)
     cv <- cv * wts
-    
+
     return(sum(cv)/lenx)
 }
 
@@ -45,28 +46,28 @@ LOOCV_grid <- function(x, y, hgrid = seq(from = 0.05, to = 3, length.out = 80), 
     return(list(min_h = min_h, min_CV = cvs[min_index], hgrid = hgrid))
 }
 
+#' @keywords internal
+MCV_loopfun <- function(input, nextmx, nextmy, firstmx, firstmy, bandwidth) {
+  est_val <- nwestimator(nextmx[input], firstmx, firstmy, bandwidth)
+  if (is.nan(est_val)) {
+    est_val <- 0
+  }
+  sq_error <- (nextmy[input] - est_val)^2
+  return(sq_error)
+}
 
 #' MCV
 #' @keywords internal
 MCV <- function(nextmx, nextmy, firstmx, firstmy, bandwidth, samp_quant) {
-    
+
     lenmx <- length(nextmx)
-    
-    loopfun <- function(input) {
-        est_val <- nwestimator(nextmx[input], firstmx, firstmy, bandwidth)
-        if (is.nan(est_val)) {
-            est_val <- 0
-        }
-        sq_error <- (nextmy[input] - est_val)^2
-        return(sq_error)
-    }
-    
-    ecv <- vapply(1:lenmx, loopfun, numeric(1))
+
+    ecv <- vapply(1:lenmx, MCV_loopfun, numeric(1), nextmx, nextmy, firstmx, firstmy, bandwidth)
     wts <- weightfun(nextmx, samp_quant)
     ecv <- ecv * wts
     output <- sum(ecv)/(lenmx)
     return(output)
-    
+
 }
 
 #' Modified cross-validation
@@ -108,17 +109,17 @@ PCV <- function(data, bandwidth, g, samp_quant) {
     n <- nrow(data)
     dat_num <- g * floor(n/g)
     dat_sub <- data[1:dat_num, ]
-    
+
     dat_grp <- list()
     cnt_vec <- seq(1, dat_num, dat_num/g)
     dat_grp <- lapply(cnt_vec, function(curr_num) {
         ret <- dat_sub[curr_num:(curr_num + (dat_num/g) - 1), ]
     })
-    
+
     cv_err <- vapply(dat_grp, function(dat_in) {
         ret <- LOOCV(dat_in$x, dat_in$y, bandwidth, samp_quant)
     }, numeric(1))
-    
+
     pcv_err <- mean(cv_err)
 }
 
@@ -136,7 +137,7 @@ PCV <- function(data, bandwidth, g, samp_quant) {
 #'
 #' @family NOIS CV functions
 #' @export
-PCV_grid <- function(x, y, hgrid = seq(from = 0.05, to = 3, length.out = 100), g = floor(length(x)/5), weight_probs = c(0.05, 
+PCV_grid <- function(x, y, hgrid = seq(from = 0.05, to = 3, length.out = 100), g = floor(length(x)/5), weight_probs = c(0.05,
     0.95)) {
     samp_quant <- stats::quantile(x, probs = weight_probs)
     data <- data.frame(x = x, y = y)
