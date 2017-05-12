@@ -168,13 +168,14 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
 
 
     if (CV_method %in% c("LOOCV", "MCV", "PCV")) {
-        if (CV_method == "LOOCV") {
-            first_CV <- LOOCV_grid(xx, yy, ...)
-        } else if (CV_method == "MCV") {
-            first_CV <- MCV_grid(xx, yy, ...)
-        } else if (CV_method == "PCV") {
-            first_CV <- PCV_grid(xx, yy, ...)
-        }
+        # if (CV_method == "LOOCV") {
+        #     first_CV <- LOOCV_grid(xx, yy, ...)
+        # } else if (CV_method == "MCV") {
+        #     first_CV <- MCV_grid(xx, yy, ...)
+        # } else if (CV_method == "PCV") {
+        #     first_CV <- PCV_grid(xx, yy, ...)
+        # }
+        first_CV <- switch(CV_method, LOOCV = LOOCV_grid(xx, yy, ...), MCV = MCV_grid(xx, yy, ...), PCV = PCV_grid(xx, yy, ...))
         first_h <- first_CV$min_h
         first_hgrid <- first_CV$hgrid
         if (first_h == first_hgrid[1] | first_h == first_hgrid[length(first_hgrid)]) {
@@ -266,13 +267,14 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
     pool_y_adj <- yy - gam_val
     # pooled cv
     if (CV_method %in% c("LOOCV", "MCV", "PCV")) {
-        if (CV_method == "LOOCV") {
-            pool_CV <- LOOCV_grid(xx, pool_y_adj, ...)
-        } else if (CV_method == "MCV") {
-            pool_CV <- MCV_grid(xx, pool_y_adj, ...)
-        } else if (CV_method == "PCV") {
-            pool_CV <- PCV_grid(xx, pool_y_adj, ...)
-        }
+        # if (CV_method == "LOOCV") {
+        #     pool_CV <- LOOCV_grid(xx, pool_y_adj, ...)
+        # } else if (CV_method == "MCV") {
+        #     pool_CV <- MCV_grid(xx, pool_y_adj, ...)
+        # } else if (CV_method == "PCV") {
+        #     pool_CV <- PCV_grid(xx, pool_y_adj, ...)
+        # }
+        pool_CV <- switch(CV_method, LOOCV = LOOCV_grid(xx, pool_y_adj, ...), MCV = MCV_grid(xx, pool_y_adj, ...), PCV = PCV_grid(xx, pool_y_adj, ...))
         pool_h <- pool_CV$min_h
         pool_hgrid <- pool_CV$hgrid
         if (pool_h == pool_hgrid[1] | pool_h == pool_hgrid[length(pool_hgrid)]) {
