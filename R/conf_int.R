@@ -201,8 +201,8 @@ NOIS_logelr_root <- function(yvals, hyp_theta, gkcalc, conf_level = 0.05, invis 
     return(funcoutput)
 }
 
-#' @keywords internal
-EL_rootfun <- function(hyp_val) {
+
+EL_rootfun <- function(hyp_val, y, gkcalc, calib_type, conf_level, bias_correct, nwfit, i) {
   if (bias_correct == FALSE) {
     llr <- NOIS_logelr_root(y, hyp_val, gkcalc, calib_type = calib_type, conf_level = conf_level)
   } else {
@@ -211,6 +211,8 @@ EL_rootfun <- function(hyp_val) {
   }
   return(llr)
 }
+
+
 
 #' Empirical likelihood pointwise confidence bands for '\code{NOIS_fit}' objects
 #'
@@ -244,6 +246,7 @@ EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_corr
             nwfit <- NOIS_fit$pool_fit
             theta <- NOIS_fit$bias_pool_fit
         } else {
+            nwfit <- NULL
             theta <- NOIS_fit$pool_fit
         }
     } else if (fit_type == "regular") {
@@ -253,6 +256,7 @@ EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_corr
             nwfit <- NOIS_fit$first_fit
             theta <- NOIS_fit$bias_first_fit
         } else {
+            nwfit <- NULL
             theta <- NOIS_fit$first_fit
         }
     } else {
@@ -265,17 +269,31 @@ EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_corr
         `%fun%` <- foreach::`%dopar%`
     }
 
+
     ptm <- proc.time()
     loop_obj <- foreach::foreach(i = 1:length(x)) %fun% {
         gkcalc <- as.matrix(dnorm(x - x[i], 0, bandwidth))
         # gkcalc <- as.matrix(gausskern(x - x[i], bandwidth))
 
+        # EL_rootfun <- function(hyp_val) {
+        #   if (bias_correct == FALSE) {
+        #     llr <- NOIS_logelr_root(y, hyp_val, gkcalc, calib_type = calib_type, conf_level = conf_level)
+        #   } else {
+        #     llr <- NOIS_logelr_root(y, hyp_val, gkcalc, calib_type = calib_type, conf_level = conf_level, nwest_val = nwfit,
+        #                             index = i)
+        #   }
+        #   return(llr)
+        # }
+
+
         mletheta <- theta[i]
         left <- left
         right <- right
-        nwupsoln <- stats::uniroot(EL_rootfun, c(mletheta + left, mletheta + right), check.conv = TRUE, maxiter = maxit)
+        nwupsoln <- stats::uniroot(EL_rootfun, c(mletheta + left, mletheta + right), check.conv = TRUE, maxiter = maxit, y = y, gkcalc = gkcalc, calib_type = calib_type, conf_level = conf_level, bias_correct = bias_correct, nwfit = nwfit, i = i)
+        # nwupsoln <- stats::uniroot(EL_rootfun, c(mletheta + left, mletheta + right), check.conv = TRUE, maxiter = maxit)
         up_val <- nwupsoln$root
-        nwlowsoln <- stats::uniroot(EL_rootfun, c(mletheta - left, mletheta - right), check.conv = TRUE, maxiter = maxit)
+        nwlowsoln <- stats::uniroot(EL_rootfun, c(mletheta - left, mletheta - right), check.conv = TRUE, maxiter = maxit, y = y, gkcalc = gkcalc, calib_type = calib_type, conf_level = conf_level, bias_correct = bias_correct, nwfit = nwfit, i = i)
+        # nwlowsoln <- stats::uniroot(EL_rootfun, c(mletheta - left, mletheta - right), check.conv = TRUE, maxiter = maxit)
         low_val <- nwlowsoln$root
         upiter <- nwupsoln$iter
         lowiter <- nwlowsoln$iter
