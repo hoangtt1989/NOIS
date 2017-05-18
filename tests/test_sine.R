@@ -1,7 +1,7 @@
 library(NOIS)
 
 set.seed(123)
-npts <- 100
+npts <- 1000
 nout <- floor(.1*npts)
 
 xt <- seq(from=0, to=2*pi, length.out=npts)
@@ -18,5 +18,8 @@ data <- data.frame(x=xt, y=yt)
 
 fit <- NOIS_fit(data, CV_method = 'MCV')
 fit$conv$time
+fit$local_q
+outlier_plot(fit)
+length(intersect(fit$pool_outlier, outliers))
 # EL <- NOIS_confint(fit, conf_type = "EL", right = 5)
 EL$up_predicted > EL$low_predicted

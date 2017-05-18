@@ -207,3 +207,64 @@ NumericVector quantile_thresh(NumericVector x, const int & thresh_val) {
 // }
 
 
+// [[Rcpp::export]]
+// List NOIS_loop(NumericVector xx, NumericVector yy, int nn, double first_h, double local_q, double tol, int maxit) {
+//
+//   //   // declaring type
+//   double xx_inner;
+//   NumericVector yy_adj(nn);
+//   double cond_inner;
+//   NumericVector kernlist(nn);
+//   NumericVector kern_nz(nn);
+//   NumericVector kern_nzsqrt(nn);
+//   NumericVector kern_nzsqrtinv(nn);
+//   NumericVector kern_nzsqrtinv_sub;
+//   IntegerVector nz_ind;
+//   NumericVector qq(nn);
+//   NumericVector rr(nn);
+//   NumericVector cond_abs(nn);
+//   NumericVector gamma_diff(nn);
+//   NumericVector thresh(nn);
+//   int i;
+//   bool converged;
+//   List ret;
+//
+//   NumericMatrix gamma_curr(nn, nn);
+//   NumericVector gamma_inner(nn);
+//   NumericVector gamma_next(nn);
+//
+//   for(int jj = 0; jj < nn; ++jj) {
+//
+// // #     kernlist <- dnorm(xx_inner - xx, 0, first_h)
+// // #     nz_ind <- which(kernlist != 0 & kernlist >= 1e-20)
+// // #     kern_nz <- rep(0, nn)
+// // #     kern_nz[nz_ind] <- kernlist[nz_ind]
+// // #     kern_nzsqrt <- rep(0, nn)
+// // #     kern_nzsqrt[nz_ind] <- sqrt(kern_nz)[nz_ind]
+// // #     kern_nzsqrtinv <- rep(0, nn)
+// // #     kern_nzsqrtinv[nz_ind] <- 1/kern_nzsqrt[nz_ind]
+// // #     qq[jj] <- qdet(local_q, kern_nz)
+//     xx_inner = xx(jj);
+//     kernlist = dnorm(xx_inner - xx, 0, first_h);
+//     nz_ind = seq_len(nn) - 1;
+//     nz_ind = nz_ind[kernlist != 0 & kernlist >= 1e-20];
+//     std::fill(kern_nz.begin(), kern_nz.end(), 0.0);
+//     kern_nz[nz_ind] = kernlist[nz_ind];
+//     std::fill(kern_nzsqrt.begin(), kern_nzsqrt.end(), 0.0);
+//     kern_nzsqrt[nz_ind] = sqrt(kern_nz[nz_ind]);
+//     std::fill(kern_nzsqrtinv.begin(), kern_nzsqrtinv.end(), 0.0);
+//     kern_nzsqrtinv_sub = kern_nzsqrt[nz_ind];
+//     kern_nzsqrtinv_sub = 1.0/kern_nzsqrtinv_sub;
+//     kern_nzsqrtinv[nz_ind] = kern_nzsqrtinv_sub;
+//     qq[jj] = max(1, ceil(local_q * nz_ind.size()));
+//
+//
+//     for(i = 0; i < maxit; ++i) {
+//
+//     }
+//
+//   }
+//
+// }
+
+

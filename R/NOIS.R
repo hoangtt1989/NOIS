@@ -1,7 +1,7 @@
 
 #' @keywords internal
 qdet <- function(local_q = 0.1, nz) {
-    ret_val <- max(1, ceiling(local_q * length(nz)))
+    ret_val <- max(1, ceiling(local_q * nz))
     return(ret_val)
 }
 
@@ -86,7 +86,7 @@ NOIS_inner <- function(xx_inp, xx, yy, nn, first_h, local_q, tol, maxit) {
   kern_nzsqrt[nz_ind] <- sqrt(kern_nz)[nz_ind]
   kern_nzsqrtinv <- rep(0, nn)
   kern_nzsqrtinv[nz_ind] <- 1/kern_nzsqrt[nz_ind]
-  qq_inner <- qdet(local_q, kern_nz)
+  qq_inner <- qdet(local_q, length(nz_ind))
 
   gamma_inner <- rep(0, nn)
 
@@ -108,7 +108,7 @@ NOIS_inner <- function(xx_inp, xx, yy, nn, first_h, local_q, tol, maxit) {
   if(ii == maxit) {
     warning('One of the points did not converge. Check status in conv.')
   }
-  return(list(local_fit = local_inner, gamma_curr = gamma_inner, converged = converge_inner,
+  return(list(local_fit = local_inner, gamma_curr = gamma_inner, qq_inner = qq_inner, converged = converge_inner,
               cond_check = cond_inner, iter = ii))
 }
 
@@ -190,14 +190,13 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
 
     # initializing vectors, parameters
     nn <- nrow(data)
-    cond_check <- rep(0, nn)
-    gamma_curr <- matrix(0, nrow = nn, ncol = nn)
-    local_fit <- rep(0, nn)
-    qq <- rep(0, nn)
-    converged <- rep(0, nn)
-    iter <- rep(0, nn)
-    cond_check <- rep(1, nn)
-
+    # cond_check <- rep(0, nn)
+    # gamma_curr <- matrix(0, nrow = nn, ncol = nn)
+    # local_fit <- rep(0, nn)
+    # qq <- rep(0, nn)
+    # converged <- rep(0, nn)
+    # iter <- rep(0, nn)
+    # cond_check <- rep(1, nn)
 
     if (CV_method %in% c("LOOCV", "MCV", "PCV")) {
         first_CV <- switch(CV_method, LOOCV = LOOCV_grid(xx, yy, ...), MCV = MCV_grid(xx, yy, ...), PCV = PCV_grid(xx, yy, ...))
@@ -220,8 +219,9 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
     bias_nw_ests <- biasnwvector(xx, yy, nw_ests, first_h)
 
     ptm <- proc.time()
-    inner_fit <- lapply(xx, NOIS_inner, xx, yy, nn, first_h, local_q, tol, maxit)
+    inner_fit <- lapply(xx, NOIS_inner, xx = xx, yy = yy, nn = nn, first_h = first_h, local_q = local_q, tol = tol, maxit = maxit)
     local_fit <- purrr::map_dbl(inner_fit, 'local_fit')
+    qq_inner <- purrr::map_dbl(inner_fit, 'qq_inner')
     gamma_curr <- do.call(cbind, lapply(inner_fit, function(x){x$gamma_curr}))
     converged <- purrr::map_lgl(inner_fit, 'converged')
     cond_check <- purrr::map_dbl(inner_fit, 'cond_check')
@@ -324,7 +324,7 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
 
     model_output <- list(local_fit = local_fit, pool_fit = pool_fit, bias_pool_fit = bias_pool_fit, first_fit = nw_ests,
         bias_first_fit = bias_nw_ests, local_gamma = gamma_curr, pool_gamma = gam_val, pool_outlier = gam_ind,
-        local_q = qq, pool_q = pool_q, pool_nonout = pool_nonout, x = xx, y_adj = pool_y_adj, y = yy, CV = CV, conv = conv)
+        local_q = qq_inner, pool_q = pool_q, pool_nonout = pool_nonout, x = xx, y_adj = pool_y_adj, y = yy, CV = CV, conv = conv)
     class(model_output) <- "NOIS_fit"
     model_output
 }
