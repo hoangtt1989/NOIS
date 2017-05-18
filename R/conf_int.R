@@ -83,6 +83,7 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
 
     if (parallel == T) {
         `%fun%` <- doRNG::`%dorng%`
+        i <- NULL
         ret <- foreach::foreach(i = 1:B, .combine = cbind) %fun% {
             loop_ret <- pred_resids_func(x, theta, center_resid, sd_est, bandwidth, bias_correct)
             return(loop_ret)
@@ -155,6 +156,7 @@ resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bia
 
     if (parallel == T) {
         `%fun%` <- doRNG::`%dorng%`
+        i <- NULL
         ret <- foreach::foreach(i = 1:B, .combine = cbind) %fun% {
             loop_ret <- resids_func(x, func_est, center_resid, bandwidth, bias_correct)
             return(loop_ret)
@@ -268,7 +270,7 @@ EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_corr
     } else {
         `%fun%` <- foreach::`%dopar%`
     }
-
+    i <- NULL
 
     ptm <- proc.time()
     loop_obj <- foreach::foreach(i = 1:length(x)) %fun% {

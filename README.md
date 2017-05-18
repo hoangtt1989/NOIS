@@ -55,11 +55,12 @@ sine_fit
 
     ## Number of detected outliers = 20 
     ## Number of observations = 200 
+    ## Time = 
     ## Convergence = TRUE 
     ## MSE = 0.7681321 
     ## Bias corrected MSE = 0.7573429 
-    ## First optimal bandwidth = 1.767722 
-    ## Pooled optimal bandwidth = 0.4234177
+    ## First optimal bandwidth = 
+    ## Pooled optimal bandwidth =
 
 We plot the estimated curve and mark the detected outliers. NOIS correctly detects all of the outliers.
 
