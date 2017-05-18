@@ -105,7 +105,9 @@ NOIS_inner <- function(xx_inp, xx, yy, nn, first_h, local_q, tol, maxit) {
       converge_inner = F
     }
   }
-
+  if(ii == maxit) {
+    warning('One of the points did not converge. Check status in conv.')
+  }
   return(list(local_fit = local_inner, gamma_curr = gamma_inner, converged = converge_inner,
               cond_check = cond_inner, iter = ii))
 }
