@@ -42,7 +42,7 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
     x <- NOIS_fit$x
     if (fit_type == "NOIS") {
         y <- NOIS_fit$y_adj
-        bandwidth <- NOIS_fit$pool_h
+        bandwidth <- NOIS_fit$CV$pool_h
         theta <- NOIS_fit$pool_fit
         if (bias_correct == T) {
             theta <- NOIS_fit$bias_pool_fit
@@ -50,7 +50,7 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
         }
     } else if (fit_type == "regular") {
         y <- NOIS_fit$y
-        bandwidth <- NOIS_fit$first_h
+        bandwidth <- NOIS_fit$CV$first_h
         theta <- NOIS_fit$first_fit
         if (bias_correct == T) {
             theta <- NOIS_fit$bias_first_fit
@@ -133,14 +133,14 @@ resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bia
     x <- NOIS_fit$x
     if (fit_type == "NOIS") {
         y <- NOIS_fit$y_adj
-        bandwidth <- NOIS_fit$pool_h
+        bandwidth <- NOIS_fit$CV$pool_h
         func_est <- NOIS_fit$pool_fit
         if (bias_correct == T) {
             func_est <- NOIS_fit$bias_pool_fit
         }
     } else if (fit_type == "regular") {
         y <- NOIS_fit$y
-        bandwidth <- NOIS_fit$first_h
+        bandwidth <- NOIS_fit$CV$first_h
         func_est <- NOIS_fit$first_fit
         if (bias_correct == T) {
             func_est <- NOIS_fit$bias_first_fit
@@ -179,7 +179,7 @@ resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bia
 
 
 #' @keywords internal
-NOIS_logelr_root <- function(yvals, hyp_theta, gkcalc, conf_level = 0.05, invis = 1, nwest_val = NULL, index = NULL,
+NOIS_logelr_root <- function(yvals, hyp_theta, gkcalc, conf_level = 0.05, nwest_val = NULL, index = NULL,
     calib_type = "F") {
     if (is.null(nwest_val) & is.null(index)) {
         score_vec <- gkcalc * (yvals - hyp_theta)
@@ -240,7 +240,7 @@ EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_corr
     left = 0, right = 20, maxit = 50) {
     x <- NOIS_fit$x
     if (fit_type == "NOIS") {
-        bandwidth <- NOIS_fit$pool_h
+        bandwidth <- NOIS_fit$CV$pool_h
         y <- NOIS_fit$y_adj
         if (bias_correct == TRUE) {
             nwfit <- NOIS_fit$pool_fit
@@ -250,7 +250,7 @@ EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_corr
             theta <- NOIS_fit$pool_fit
         }
     } else if (fit_type == "regular") {
-        bandwidth <- NOIS_fit$first_h
+        bandwidth <- NOIS_fit$CV$first_h
         y <- NOIS_fit$y
         if (bias_correct == TRUE) {
             nwfit <- NOIS_fit$first_fit

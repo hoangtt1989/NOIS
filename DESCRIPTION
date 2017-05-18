@@ -11,12 +11,14 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.0.1
 RdMacros: Rdpack
+LinkingTo: Rcpp
 Imports:
   doRNG,
   foreach,
   ggplot2,
   parallel,
   purrr,
+  Rcpp,
   tibble
 Suggests: testthat,
     knitr,

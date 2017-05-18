@@ -57,7 +57,7 @@ BIC_NOIS <- function(NOIS_fit, bias_correct = T) {
     npts <- length(NOIS_fit$y)
     smooth_df <- do.call(rbind, lapply(1:npts, function(ind) {
         # tmp <- gausskern(NOIS_fit$x[ind] - NOIS_fit$x, NOIS_fit$pool_h)
-        tmp <- dnorm(NOIS_fit$x[ind] - NOIS_fit$x, 0, NOIS_fit$pool_h)
+        tmp <- dnorm(NOIS_fit$x[ind] - NOIS_fit$x, 0, NOIS_fit$CV$pool_h)
         ret <- tmp/sum(tmp)
         return(ret)
     }))
@@ -72,6 +72,42 @@ BIC_NOIS <- function(NOIS_fit, bias_correct = T) {
     BIC_val <- (npts - m) * log(sum((NOIS_fit$y_adj - fit)^2)/(npts - m)) + (NOIS_fit$pool_q + 1) * (log(npts -
         m) + 1)
     return(list(BIC = BIC_val, df = m))
+}
+
+#' @keywords internal
+NOIS_inner <- function(xx_inp, xx, yy, nn, first_h, local_q, tol, maxit) {
+
+  xx_inner <- xx_inp
+  kernlist <- dnorm(xx_inner - xx, 0, first_h)
+  nz_ind <- which(kernlist != 0 & kernlist >= 1e-20)
+  kern_nz <- rep(0, nn)
+  kern_nz[nz_ind] <- kernlist[nz_ind]
+  kern_nzsqrt <- rep(0, nn)
+  kern_nzsqrt[nz_ind] <- sqrt(kern_nz)[nz_ind]
+  kern_nzsqrtinv <- rep(0, nn)
+  kern_nzsqrtinv[nz_ind] <- 1/kern_nzsqrt[nz_ind]
+  qq_inner <- qdet(local_q, kern_nz)
+
+  gamma_inner <- rep(0, nn)
+
+  for (ii in 1:maxit) {
+    yy_adj <- yy - gamma_inner
+    local_inner <- nwestimator(xx_inner, xx, yy_adj, first_h)
+    rr <- kern_nzsqrt * (yy - local_inner)
+    gamma_next <- kern_nzsqrtinv * quantile_thresh(rr, qq_inner)
+    cond_inner <- max(abs(gamma_next - gamma_inner))
+    gamma_inner <- gamma_next
+
+    if (max(abs(cond_inner)) <= tol) {
+      converge_inner <- T
+      break
+    } else {
+      converge_inner = F
+    }
+  }
+
+  return(list(local_fit = local_inner, gamma_curr = gamma_inner, converged = converge_inner,
+              cond_check = cond_inner, iter = ii))
 }
 
 #' Fitting NOIS to data
@@ -109,14 +145,8 @@ BIC_NOIS <- function(NOIS_fit, bias_correct = T) {
 #' \item{\code{x}}{Original 'x' values.}
 #' \item{\code{y_adj}}{Pooled adjusted 'y' values.}
 #' \item{\code{y}}{Original 'x' values.}
-#' \item{\code{first_h}}{Bandwidth used for first (non-robust) kernel smoothing fit.}
-#' \item{\code{pool_h}}{Bandwidth used for pooled NOIS fit.}
-#' \item{\code{first_hgrid}}{Grid of bandwidths used for first (non-robust) kernel smoothing fit.}
-#' \item{\code{pool_hgrid}}{Grid of bandwidths used for pooled NOIS fit.}
-#' \item{\code{iter}}{Number of iterations for each unpooled fit.}
-#' \item{\code{time}}{Elapsed time.}
-#' \item{\code{converged}}{Convergence of each unpooled fit. 0 means the fit did not converge in \code{maxit}, 1 means it did.}
-#' \item{\code{cond_check}}{The infinity norm of each unpooled \eqn{\gamma} estimate.}
+#' \item{code{CV}}{A list with cross-validation information.}
+#' \item{code{conv}}{A list with convergence information.}
 #' @examples
 #' ###generate some random data and introduce outliers
 #' set.seed(123)
@@ -188,57 +218,63 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
     bias_nw_ests <- biasnwvector(xx, yy, nw_ests, first_h)
 
     ptm <- proc.time()
-    for (jj in 1:nn) {
-
-        xx_inner <- xx[jj]
-
-        # kernlist <- dnorm(xx_inner - xx, 0, first_h)
-        # nz_ind <- which(kernlist != 0 & kernlist >= 1e-20)
-        # kern_nz <- kernlist[nz_ind]
-        # kern_nzsqrt <- sqrt(kern_nz)
-        # kern_nzsqrtinv <- 1/kern_nzsqrt
-        kernlist <- dnorm(xx_inner - xx, 0, first_h)
-        nz_ind <- which(kernlist != 0 & kernlist >= 1e-20)
-        kern_nz <- rep(0, nn)
-        kern_nz[nz_ind] <- kernlist[nz_ind]
-        kern_nzsqrt <- rep(0, nn)
-        kern_nzsqrt[nz_ind] <- sqrt(kern_nz)[nz_ind]
-        kern_nzsqrtinv <- rep(0, nn)
-        kern_nzsqrtinv[nz_ind] <- 1/kern_nzsqrt[nz_ind]
-        qq[jj] <- qdet(local_q, kern_nz)
-
-        gamma_inner <- rep(0, nn)
-        qq_inner <- qq[jj]
-
-        for (ii in 1:maxit) {
-            # gamma_next <- rep(0, nn)
-            yy_adj <- yy - gamma_inner
-            local_inner <- nwestimator(xx_inner, xx, yy_adj, first_h)
-            rr <- kern_nzsqrt * (yy - local_inner)
-            # rr <- kern_nzsqrt * ((yy - local_inner))[nz_ind]
-            gamma_next <- kern_nzsqrtinv * quantile_thresh(rr, qq_inner)
-            # gamma_next[nz_ind] <- kern_nzsqrtinv * quantile_thresh(rr, qq_inner)
-            cond_inner <- max(abs(gamma_next - gamma_inner))
-            gamma_inner <- gamma_next
-
-            if (max(abs(cond_inner)) <= tol) {
-                converge_inner <- T
-                break
-            } else {
-                converge_inner = F
-            }
-        }
-
-        local_fit[jj] <- local_inner
-        gamma_curr[, jj] <- gamma_inner
-        converged[jj] <- converge_inner
-        cond_check[jj] <- cond_inner
-        iter[jj] <- ii
-
-        if (ii == maxit) {
-            warning(paste("Model did not converge at j =", jj))
-        }
-    }
+    inner_fit <- lapply(xx, NOIS_inner, xx, yy, nn, first_h, local_q, tol, maxit)
+    local_fit <- purrr::map_dbl(inner_fit, 'local_fit')
+    gamma_curr <- do.call(cbind, lapply(inner_fit, function(x){x$gamma_curr}))
+    converged <- purrr::map_lgl(inner_fit, 'converged')
+    cond_check <- purrr::map_dbl(inner_fit, 'cond_check')
+    iter <- purrr::map_int(inner_fit, 'iter')
+    # for (jj in 1:nn) {
+    #
+    #     xx_inner <- xx[jj]
+    #
+    #     # kernlist <- dnorm(xx_inner - xx, 0, first_h)
+    #     # nz_ind <- which(kernlist != 0 & kernlist >= 1e-20)
+    #     # kern_nz <- kernlist[nz_ind]
+    #     # kern_nzsqrt <- sqrt(kern_nz)
+    #     # kern_nzsqrtinv <- 1/kern_nzsqrt
+    #     kernlist <- dnorm(xx_inner - xx, 0, first_h)
+    #     nz_ind <- which(kernlist != 0 & kernlist >= 1e-20)
+    #     kern_nz <- rep(0, nn)
+    #     kern_nz[nz_ind] <- kernlist[nz_ind]
+    #     kern_nzsqrt <- rep(0, nn)
+    #     kern_nzsqrt[nz_ind] <- sqrt(kern_nz)[nz_ind]
+    #     kern_nzsqrtinv <- rep(0, nn)
+    #     kern_nzsqrtinv[nz_ind] <- 1/kern_nzsqrt[nz_ind]
+    #     qq[jj] <- qdet(local_q, kern_nz)
+    #
+    #     gamma_inner <- rep(0, nn)
+    #     qq_inner <- qq[jj]
+    #
+    #     for (ii in 1:maxit) {
+    #         # gamma_next <- rep(0, nn)
+    #         yy_adj <- yy - gamma_inner
+    #         local_inner <- nwestimator(xx_inner, xx, yy_adj, first_h)
+    #         rr <- kern_nzsqrt * (yy - local_inner)
+    #         # rr <- kern_nzsqrt * ((yy - local_inner))[nz_ind]
+    #         gamma_next <- kern_nzsqrtinv * quantile_thresh(rr, qq_inner)
+    #         # gamma_next[nz_ind] <- kern_nzsqrtinv * quantile_thresh(rr, qq_inner)
+    #         cond_inner <- max(abs(gamma_next - gamma_inner))
+    #         gamma_inner <- gamma_next
+    #
+    #         if (max(abs(cond_inner)) <= tol) {
+    #             converge_inner <- T
+    #             break
+    #         } else {
+    #             converge_inner = F
+    #         }
+    #     }
+    #
+    #     local_fit[jj] <- local_inner
+    #     gamma_curr[, jj] <- gamma_inner
+    #     converged[jj] <- converge_inner
+    #     cond_check[jj] <- cond_inner
+    #     iter[jj] <- ii
+    #
+    #     if (ii == maxit) {
+    #         warning(paste("Model did not converge at j =", jj))
+    #     }
+    # }
     etm <- proc.time() - ptm
 
     # get max
@@ -279,11 +315,14 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
     bias_pool_fit <- biasnwvector(xx, pool_y_adj, pool_fit, pool_h)
     pool_nonout <- setdiff(1:nn, gam_ind)
 
+    # CV
+    CV <- list(first_h = first_h, pool_h = pool_h, first_hgrid = first_hgrid, pool_hgrid = pool_hgrid)
+    # convergence
+    conv <- list(iter = iter, time = etm, converged = converged, cond_check = cond_check)
+
     model_output <- list(local_fit = local_fit, pool_fit = pool_fit, bias_pool_fit = bias_pool_fit, first_fit = nw_ests,
         bias_first_fit = bias_nw_ests, local_gamma = gamma_curr, pool_gamma = gam_val, pool_outlier = gam_ind,
-        local_q = qq, pool_q = pool_q, pool_nonout = pool_nonout, x = xx, y_adj = pool_y_adj, y = yy, first_h = first_h,
-        pool_h = pool_h, first_hgrid = first_hgrid, pool_hgrid = pool_hgrid, iter = iter, time = etm, converged = converged,
-        cond_check = cond_check)
+        local_q = qq, pool_q = pool_q, pool_nonout = pool_nonout, x = xx, y_adj = pool_y_adj, y = yy, CV = CV, conv = conv)
     class(model_output) <- "NOIS_fit"
     model_output
 }

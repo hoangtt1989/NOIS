@@ -17,5 +17,6 @@ orig_func <- sin(xt)
 data <- data.frame(x=xt, y=yt)
 
 fit <- NOIS_fit(data, CV_method = 'MCV')
-EL <- NOIS_confint(fit, conf_type = "EL", right = 5)
+fit$conv$time
+# EL <- NOIS_confint(fit, conf_type = "EL", right = 5)
 EL$up_predicted > EL$low_predicted
