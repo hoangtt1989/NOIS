@@ -7,6 +7,18 @@
 LOOCV_grid(x, y, hgrid = seq(from = 0.05, to = 3, length.out = 80),
   weight_probs = c(0.05, 0.95))
 }
+\arguments{
+\item{x}{'x' values.}
+
+\item{y}{'y' values.}
+
+\item{hgrid}{The grid of test bandwidths.}
+
+\item{weight_probs}{Specification for what percentage of points are used in the weight function.}
+}
+\value{
+The minimum bandwidth h, the minimum CV error and the grid of test bandwidths.
+}
 \description{
 Evaluate leave-one-out cross-validation (LOOCV) for the Nadaraya-Watson estimator over a grid
 }

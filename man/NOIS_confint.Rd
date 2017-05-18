@@ -4,10 +4,10 @@
 \alias{NOIS_confint}
 \title{Pointwise confidence bands for '\code{NOIS_fit}' objects}
 \usage{
-NOIS_confint(obj, conf_type = "pred_BS", ...)
+NOIS_confint(NOIS_fit, conf_type = "pred_BS", ...)
 }
 \arguments{
-\item{obj}{A \code{NOIS_fit}.}
+\item{NOIS_fit}{A \code{NOIS_fit}.}
 
 \item{conf_type}{The type of confidence interval construction. Valid types are \code{c('pred_BS', 'resid_BS', 'EL')}.}
 

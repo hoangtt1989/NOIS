@@ -7,6 +7,20 @@
 PCV_grid(x, y, hgrid = seq(from = 0.05, to = 3, length.out = 100),
   g = floor(length(x)/5), weight_probs = c(0.05, 0.95))
 }
+\arguments{
+\item{x}{'x' values.}
+
+\item{y}{'y' values.}
+
+\item{hgrid}{The grid of test bandwidths.}
+
+\item{g}{The number of points used in each training subgroup. This is the most sensitive parameter.}
+
+\item{weight_probs}{Specification for what percentage of points are used in the weight function.}
+}
+\value{
+The minimum bandwidth h, the minimum CV error and the grid of test bandwidths.
+}
 \description{
 Evaluate partitioned cross-validation (PCV) for the Nadaraya-Watson estimator over a grid
 }

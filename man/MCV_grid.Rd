@@ -7,6 +7,26 @@
 MCV_grid(x, y, m = 0.6, a = 0.75, b = 10, eps0 = 1/175, gridlen = 100,
   weight_probs = c(0.05, 0.95))
 }
+\arguments{
+\item{x}{'x' values.}
+
+\item{y}{'y' values.}
+
+\item{m}{The fraction of observations used for training. This is the most sensitive parameter.}
+
+\item{a}{Constant for tuning grid (not recommended to change).}
+
+\item{b}{Constant for tuning grid (not recommended to change).}
+
+\item{eps0}{Constant for tuning grid (not recommended to change).}
+
+\item{gridlen}{The number of grid points.}
+
+\item{weight_probs}{Specification for what percentage of points are used in the weight function.}
+}
+\value{
+The minimum bandwidth h, the minimum CV error and the grid of test bandwidths.
+}
 \description{
 Evaluate modified cross-validation (MCV) for the Nadaraya-Watson estimator over a grid
 }

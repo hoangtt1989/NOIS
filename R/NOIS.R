@@ -57,7 +57,7 @@ BIC_NOIS <- function(NOIS_fit, bias_correct = T) {
     npts <- length(NOIS_fit$y)
     smooth_df <- do.call(rbind, lapply(1:npts, function(ind) {
         # tmp <- gausskern(NOIS_fit$x[ind] - NOIS_fit$x, NOIS_fit$pool_h)
-        tmp <- dnorm(NOIS_fit$x[ind] - NOIS_fit$x, 0, NOIS_fit$CV$pool_h)
+        tmp <- stats::dnorm(NOIS_fit$x[ind] - NOIS_fit$x, 0, NOIS_fit$CV$pool_h)
         ret <- tmp/sum(tmp)
         return(ret)
     }))
@@ -78,7 +78,7 @@ BIC_NOIS <- function(NOIS_fit, bias_correct = T) {
 NOIS_inner <- function(xx_inp, xx, yy, nn, first_h, local_q, tol, maxit) {
 
   xx_inner <- xx_inp
-  kernlist <- dnorm(xx_inner - xx, 0, first_h)
+  kernlist <- stats::dnorm(xx_inner - xx, 0, first_h)
   nz_ind <- which(kernlist != 0 & kernlist >= 1e-20)
   kern_nz <- rep(0, nn)
   kern_nz[nz_ind] <- kernlist[nz_ind]
@@ -164,6 +164,8 @@ NOIS_inner <- function(xx_inp, xx, yy, nn, first_h, local_q, tol, maxit) {
 #' ###fit NOIS to this data
 #' sine_fit <- NOIS_fit(sine_data, 'x', 'y', pool_q = .1, CV_method = 'LOOCV')
 #' @family NOIS CV functions
+#' @useDynLib NOIS
+#' @importFrom Rcpp sourceCpp
 #' @export
 NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL, pool_h = NULL, local_q = 0.1,
     pool_q = 0.1, tol = 1e-07, maxit = 200, ...) {

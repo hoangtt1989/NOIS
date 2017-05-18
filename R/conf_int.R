@@ -1,9 +1,9 @@
 #' @keywords internal
-pred_resids_func <- function(x, theta, first_resid, sd_est, bandwidth) {
+pred_resids_func <- function(x, theta, first_resid, sd_est, bandwidth, bias_correct) {
   npts <- length(x)
   resid.resamp <- sample(first_resid, size = npts, replace = TRUE)
   newy <- theta + sd_est * resid.resamp
-  newfit <- nwvector(x, newy, bandwidth = bandwidth)
+  newfit <- nwvector(x, newy, bandwidth)
   if (bias_correct == TRUE) {
     newfit <- biasnwvector(x, newy, newfit, bandwidth)
   }
@@ -84,12 +84,12 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
     if (parallel == T) {
         `%fun%` <- doRNG::`%dorng%`
         ret <- foreach::foreach(i = 1:B, .combine = cbind) %fun% {
-            loop_ret <- pred_resids_func(x, theta, center_resid, sd_est, bandwidth)
+            loop_ret <- pred_resids_func(x, theta, center_resid, sd_est, bandwidth, bias_correct)
             return(loop_ret)
         }
         resids_boots <- ret
     } else {
-        resids_boots <- replicate(B, pred_resids_func(x, theta, center_resid, sd_est, bandwidth))
+        resids_boots <- replicate(B, pred_resids_func(x, theta, center_resid, sd_est, bandwidth, bias_correct))
     }
 
     roots <- apply(resids_boots, 2, function(x) {
@@ -108,11 +108,11 @@ pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS"
 }
 
 #' @keywords internal
-resids_func <- function(x, func_est, first_resid, bandwidth) {
+resids_func <- function(x, func_est, first_resid, bandwidth, bias_correct) {
   npts <- length(x)
   resid.resamp <- sample(first_resid, size = npts, replace = TRUE)
   newy <- func_est + resid.resamp
-  newfit <- nwvector(x, newy, bandwidth = bandwidth)
+  newfit <- nwvector(x, newy, bandwidth)
   if (bias_correct == TRUE) {
     newfit <- biasnwvector(x, newy, newfit, bandwidth)
   }
@@ -156,12 +156,12 @@ resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bia
     if (parallel == T) {
         `%fun%` <- doRNG::`%dorng%`
         ret <- foreach::foreach(i = 1:B, .combine = cbind) %fun% {
-            loop_ret <- resids_func(x, func_est, center_resid, bandwidth)
+            loop_ret <- resids_func(x, func_est, center_resid, bandwidth, bias_correct)
             return(loop_ret)
         }
         resids_boots <- ret
     } else {
-        resids_boots <- replicate(B, resids_func(x, func_est, center_resid, bandwidth))
+        resids_boots <- replicate(B, resids_func(x, func_est, center_resid, bandwidth, bias_correct))
     }
 
     roots <- apply(resids_boots, 2, function(x) {
@@ -272,7 +272,7 @@ EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_corr
 
     ptm <- proc.time()
     loop_obj <- foreach::foreach(i = 1:length(x)) %fun% {
-        gkcalc <- as.matrix(dnorm(x - x[i], 0, bandwidth))
+        gkcalc <- as.matrix(stats::dnorm(x - x[i], 0, bandwidth))
         # gkcalc <- as.matrix(gausskern(x - x[i], bandwidth))
 
         # EL_rootfun <- function(hyp_val) {

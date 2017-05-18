@@ -4,7 +4,7 @@
 \alias{NOIS_fit}
 \title{Fitting NOIS to data}
 \usage{
-NOIS_fit(data, x = "x", y = "y", CV_method = "MCV", first_h = NULL,
+NOIS_fit(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL,
   pool_h = NULL, local_q = 0.1, pool_q = 0.1, tol = 1e-07,
   maxit = 200, ...)
 }
@@ -51,17 +51,10 @@ this is the fraction of points detected as outliers.
 For integers \eqn{\ge 1} this is the number of points detected as outliers.}
 \item{\code{pool_nonout}}{The positions of the clean observations.}
 \item{\code{x}}{Original 'x' values.}
-\item{\code{local_y_adj}}{Unpooled adjusted 'y' values.}
 \item{\code{y_adj}}{Pooled adjusted 'y' values.}
 \item{\code{y}}{Original 'x' values.}
-\item{\code{first_h}}{Bandwidth used for first (non-robust) kernel smoothing fit.}
-\item{\code{pool_h}}{Bandwidth used for pooled NOIS fit.}
-\item{\code{first_hgrid}}{Grid of bandwidths used for first (non-robust) kernel smoothing fit.}
-\item{\code{pool_hgrid}}{Grid of bandwidths used for pooled NOIS fit.}
-\item{\code{iter}}{Number of iterations for each unpooled fit.}
-\item{\code{time}}{Elapsed time.}
-\item{\code{converged}}{Convergence of each unpooled fit. 0 means the fit did not converge in \code{maxit}, 1 means it did.}
-\item{\code{cond_check}}{The infinity norm of each unpooled \eqn{\gamma} estimate.}
+\item{code{CV}}{A list with cross-validation information.}
+\item{code{conv}}{A list with convergence information.}
 }
 \description{
 Fit NOIS to data and return a \code{NOIS_fit} object

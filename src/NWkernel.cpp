@@ -207,7 +207,7 @@ NumericVector quantile_thresh(NumericVector x, const int & thresh_val) {
 // }
 
 
-// [[Rcpp::export]]
+// // [[Rcpp::export]]
 // List NOIS_loop(NumericVector xx, NumericVector yy, int nn, double first_h, double local_q, double tol, int maxit) {
 //
 //   //   // declaring type
