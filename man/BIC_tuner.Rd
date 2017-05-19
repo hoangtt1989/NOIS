@@ -22,7 +22,8 @@ BIC_tuner(data, q_tst = 1:floor(nrow(data)/3), bias_correct = T,
 A list with the following components.
 \item{\code{q_tst}}{The grid of test values.}
 \item{\code{min_q}}{The optimal number of detected outliers.}
-\item{\code{BIC_vals}}{The individual outputs from \code{BIC.NOIS_fit}.}
+\item{\code{BIC_vals}}{The BIC for each fit.}
+\item{\code{df_vals}}{The estimated degrees of freedom for each fit.}
 }
 \description{
 Find the optimal number of detected outliers for NOIS using modified BIC

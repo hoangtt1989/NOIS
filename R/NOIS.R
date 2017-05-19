@@ -17,7 +17,8 @@ qdet <- function(local_q = 0.1, nz) {
 #' @return A list with the following components.
 #' \item{\code{q_tst}}{The grid of test values.}
 #' \item{\code{min_q}}{The optimal number of detected outliers.}
-#' \item{\code{BIC_vals}}{The individual outputs from \code{BIC.NOIS_fit}.}
+#' \item{\code{BIC_vals}}{The BIC for each fit.}
+#' \item{\code{df_vals}}{The estimated degrees of freedom for each fit.}
 #' @family NOIS BIC functions.
 #' @importFrom foreach %dopar%
 #' @importFrom foreach %do%
@@ -31,12 +32,13 @@ BIC_tuner <- function(data, q_tst = 1:floor(nrow(data)/3), bias_correct = T, par
         BIC_val <- BIC_NOIS(fit, bias_correct = T)
         return(BIC_val)
     }
-
-    min_ind <- q_tst[which.min(purrr::map_dbl(BIC_fits, "BIC"))]
+    BIC_vals <- purrr::map_dbl(BIC_fits, "BIC")
+    df_vals <- purrr::map_dbl(BIC_fits, "df")
+    min_ind <- q_tst[which.min(BIC_vals)]
     if (min_ind == q_tst[1] | min_ind == q_tst[length(q_tst)]) {
         warning("Minimum BIC is at the edge of the grid")
     }
-    return(list(q_tst = q_tst, min_q = min_ind, BIC_vals = BIC_fits))
+    return(list(q_tst = q_tst, min_q = min_ind, BIC_vals = BIC_vals, df_vals = df_vals))
 }
 
 #' Modified BIC for NOIS
