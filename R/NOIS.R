@@ -167,6 +167,7 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
     iter <- rep(0, nn)
     cond_check <- rep(1, nn)
 
+    ptm <- proc.time()
     if (CV_method %in% c("LOOCV", "MCV", "PCV")) {
         first_CV <- switch(CV_method, LOOCV = LOOCV_grid(xx, yy, ...), MCV = MCV_grid(xx, yy, ...), PCV = PCV_grid(xx, yy, ...))
         first_h <- first_CV$min_h
@@ -187,9 +188,7 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
     nw_ests <- nwvector(xx, yy, first_h)
     bias_nw_ests <- biasnwvector(xx, yy, nw_ests, first_h)
 
-    ptm <- proc.time()
     loop_fit <- NOIS_loop(xx, yy, first_h, local_q, tol, maxit)
-    etm <- proc.time() - ptm
 
     local_fit <- loop_fit$local_fit
     gamma_curr <- loop_fit$gamma_curr
@@ -235,6 +234,7 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
     pool_fit <- nwvector(xx, pool_y_adj, pool_h)
     bias_pool_fit <- biasnwvector(xx, pool_y_adj, pool_fit, pool_h)
     pool_nonout <- setdiff(1:nn, gam_ind)
+    etm <- proc.time() - ptm
 
     # CV
     CV <- list(first_h = first_h, pool_h = pool_h, first_hgrid = first_hgrid, pool_hgrid = pool_hgrid)
