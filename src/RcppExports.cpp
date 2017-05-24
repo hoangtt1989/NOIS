@@ -117,3 +117,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+
+static const R_CallMethodDef CallEntries[] = {
+    {"NOIS_nwestimator", (DL_FUNC) &NOIS_nwestimator, 4},
+    {"NOIS_nwvector", (DL_FUNC) &NOIS_nwvector, 3},
+    {"NOIS_LOOCV", (DL_FUNC) &NOIS_LOOCV, 4},
+    {"NOIS_biasnwestimator", (DL_FUNC) &NOIS_biasnwestimator, 7},
+    {"NOIS_biasnwvector", (DL_FUNC) &NOIS_biasnwvector, 4},
+    {"NOIS_top_index", (DL_FUNC) &NOIS_top_index, 2},
+    {"NOIS_quantile_thresh", (DL_FUNC) &NOIS_quantile_thresh, 2},
+    {"NOIS_NOIS_loop", (DL_FUNC) &NOIS_NOIS_loop, 6},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_NOIS(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
+}

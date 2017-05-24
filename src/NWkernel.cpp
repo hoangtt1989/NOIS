@@ -246,7 +246,7 @@ List NOIS_loop(const NumericVector & xx, const NumericVector & yy, const double 
 
   ret["local_fit"] = local_fit;
   ret["gamma_curr"] = gamma_curr;
-  ret["iter"] = iter;
+  ret["iter"] = iter + 1;
   ret["cond_check"] = cond_check;
   ret["converged"] = converged;
   ret["qq_inner"] = qq;
