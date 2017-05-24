@@ -5,7 +5,7 @@
 \title{Tuning modified BIC for NOIS}
 \usage{
 BIC_tuner(data, q_tst = 1:floor(nrow(data)/3), bias_correct = T,
-  parallel = F, ...)
+  parallel = F, return_fit = T, ...)
 }
 \arguments{
 \item{data}{An input \code{data.frame}.}
@@ -16,12 +16,15 @@ BIC_tuner(data, q_tst = 1:floor(nrow(data)/3), bias_correct = T,
 
 \item{parallel}{A logical indicating parallel computation. A parallel backend must be registered.}
 
+\item{return_fit}{A logical indicating whether a model with the optimal q should be fit (using \code{NOIS_fit}) and returned.}
+
 \item{...}{Additional arguments passed to \code{NOIS_fit}.}
 }
 \value{
 A list with the following components.
 \item{\code{q_tst}}{The grid of test values.}
 \item{\code{min_q}}{The optimal number of detected outliers.}
+\item{\code{opt_fit}}{A \code{NOIS_fit} using the optimal number of detected outliers.}
 \item{\code{BIC_vals}}{The BIC for each fit.}
 \item{\code{df_vals}}{The estimated degrees of freedom for each fit.}
 }

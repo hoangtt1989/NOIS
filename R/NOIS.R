@@ -13,17 +13,19 @@ qdet <- function(local_q = 0.1, nz) {
 #' @param q_tst The grid of test values for the pooled q.
 #' @param bias_correct A logical indicating bias correction.
 #' @param parallel A logical indicating parallel computation. A parallel backend must be registered.
+#' @param return_fit A logical indicating whether a model with the optimal q should be fit (using \code{NOIS_fit}) and returned.
 #' @param ... Additional arguments passed to \code{NOIS_fit}.
 #' @return A list with the following components.
 #' \item{\code{q_tst}}{The grid of test values.}
 #' \item{\code{min_q}}{The optimal number of detected outliers.}
+#' \item{\code{opt_fit}}{A \code{NOIS_fit} using the optimal number of detected outliers.}
 #' \item{\code{BIC_vals}}{The BIC for each fit.}
 #' \item{\code{df_vals}}{The estimated degrees of freedom for each fit.}
 #' @family NOIS BIC functions.
 #' @importFrom foreach %dopar%
 #' @importFrom foreach %do%
 #' @export
-BIC_tuner <- function(data, q_tst = 1:floor(nrow(data)/3), bias_correct = T, parallel = F, ...) {
+BIC_tuner <- function(data, q_tst = 1:floor(nrow(data)/3), bias_correct = T, parallel = F, return_fit = T, ...) {
 
     `%fun%` <- ifelse(parallel, `%dopar%`, `%do%`)
     i <- NULL
@@ -38,7 +40,8 @@ BIC_tuner <- function(data, q_tst = 1:floor(nrow(data)/3), bias_correct = T, par
     if (min_ind == q_tst[1] | min_ind == q_tst[length(q_tst)]) {
         warning("Minimum BIC is at the edge of the grid")
     }
-    return(list(q_tst = q_tst, min_q = min_ind, BIC_vals = BIC_vals, df_vals = df_vals))
+    opt_fit <- ifelse(return_fit, NOIS_fit(data, pool_q = min_ind, ...), NULL)
+    return(list(q_tst = q_tst, min_q = min_ind, opt_fit = opt_fit, BIC_vals = BIC_vals, df_vals = df_vals))
 }
 
 #' Modified BIC for NOIS
@@ -58,7 +61,6 @@ BIC_NOIS <- function(NOIS_fit, bias_correct = T) {
     }
     npts <- length(NOIS_fit$y)
     smooth_df <- do.call(rbind, lapply(1:npts, function(ind) {
-        # tmp <- gausskern(NOIS_fit$x[ind] - NOIS_fit$x, NOIS_fit$pool_h)
         tmp <- stats::dnorm(NOIS_fit$x[ind] - NOIS_fit$x, 0, NOIS_fit$CV$pool_h)
         ret <- tmp/sum(tmp)
         return(ret)
@@ -186,49 +188,15 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
     bias_nw_ests <- biasnwvector(xx, yy, nw_ests, first_h)
 
     ptm <- proc.time()
-    for (jj in 1:nn) {
-
-        xx_inner <- xx[jj]
-        kernlist <- stats::dnorm(xx_inner - xx, 0, first_h)
-        nz_ind <- which(kernlist != 0 & kernlist >= 1e-20)
-        kern_nz <- rep(0, nn)
-        kern_nz[nz_ind] <- kernlist[nz_ind]
-        kern_nzsqrt <- rep(0, nn)
-        kern_nzsqrt[nz_ind] <- sqrt(kern_nz[nz_ind])
-        kern_nzsqrtinv <- rep(0, nn)
-        kern_nzsqrtinv[nz_ind] <- 1/(kern_nzsqrt[nz_ind])
-        qq[jj] <- qdet(local_q, length(nz_ind))
-
-        gamma_inner <- rep(0, nn)
-        qq_inner <- qq[jj]
-
-        for (ii in 1:maxit) {
-            yy_adj <- yy - gamma_inner
-            local_inner <- nwestimator(xx_inner, xx, yy_adj, first_h)
-            rr <- kern_nzsqrt * (yy - local_inner)
-            gamma_next <- kern_nzsqrtinv * quantile_thresh(rr, qq_inner)
-            cond_inner <- max(abs(gamma_next - gamma_inner))
-            gamma_inner <- gamma_next
-
-            if (max(abs(cond_inner)) <= tol) {
-                converge_inner <- T
-                break
-            } else {
-                converge_inner = F
-            }
-        }
-
-        local_fit[jj] <- local_inner
-        gamma_curr[, jj] <- gamma_inner
-        converged[jj] <- converge_inner
-        cond_check[jj] <- cond_inner
-        iter[jj] <- ii
-
-        if (ii == maxit) {
-            warning(paste("Model did not converge at j =", jj))
-        }
-    }
+    loop_fit <- NOIS_loop(xx, yy, first_h, local_q, tol, maxit)
     etm <- proc.time() - ptm
+
+    local_fit <- loop_fit$local_fit
+    gamma_curr <- loop_fit$gamma_curr
+    converged <- loop_fit$converged
+    cond_check <- loop_fit$cond_check
+    iter <- loop_fit$iter
+    qq_inner <- loop_fit$qq_inner
 
     # get max
     gam_max <- apply(gamma_curr, 1, function(x) {

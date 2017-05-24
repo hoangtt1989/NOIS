@@ -9,6 +9,10 @@ nwvector <- function(x, y, h) {
     .Call('NOIS_nwvector', PACKAGE = 'NOIS', x, y, h)
 }
 
+LOOCV <- function(x, y, h, samp_quant) {
+    .Call('NOIS_LOOCV', PACKAGE = 'NOIS', x, y, h, samp_quant)
+}
+
 biasnwestimator <- function(inputval, xvals, yvals, h, inputnw, nwvals, shift_sq = FALSE) {
     .Call('NOIS_biasnwestimator', PACKAGE = 'NOIS', inputval, xvals, yvals, h, inputnw, nwvals, shift_sq)
 }
@@ -23,5 +27,9 @@ top_index <- function(x, n) {
 
 quantile_thresh <- function(x, thresh_val) {
     .Call('NOIS_quantile_thresh', PACKAGE = 'NOIS', x, thresh_val)
+}
+
+NOIS_loop <- function(xx, yy, first_h, local_q, tol, maxit) {
+    .Call('NOIS_NOIS_loop', PACKAGE = 'NOIS', xx, yy, first_h, local_q, tol, maxit)
 }
 

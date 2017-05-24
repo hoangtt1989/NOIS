@@ -32,6 +32,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// LOOCV
+double LOOCV(const NumericVector& x, const NumericVector& y, const double& h, const NumericVector& samp_quant);
+RcppExport SEXP NOIS_LOOCV(SEXP xSEXP, SEXP ySEXP, SEXP hSEXP, SEXP samp_quantSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const double& >::type h(hSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type samp_quant(samp_quantSEXP);
+    rcpp_result_gen = Rcpp::wrap(LOOCV(x, y, h, samp_quant));
+    return rcpp_result_gen;
+END_RCPP
+}
 // biasnwestimator
 double biasnwestimator(const double& inputval, const NumericVector& xvals, const NumericVector& yvals, const double& h, const double& inputnw, const NumericVector& nwvals, bool shift_sq);
 RcppExport SEXP NOIS_biasnwestimator(SEXP inputvalSEXP, SEXP xvalsSEXP, SEXP yvalsSEXP, SEXP hSEXP, SEXP inputnwSEXP, SEXP nwvalsSEXP, SEXP shift_sqSEXP) {
@@ -84,6 +98,22 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
     Rcpp::traits::input_parameter< const int& >::type thresh_val(thresh_valSEXP);
     rcpp_result_gen = Rcpp::wrap(quantile_thresh(x, thresh_val));
+    return rcpp_result_gen;
+END_RCPP
+}
+// NOIS_loop
+List NOIS_loop(const NumericVector& xx, const NumericVector& yy, const double& first_h, const double& local_q, const double& tol, const int& maxit);
+RcppExport SEXP NOIS_NOIS_loop(SEXP xxSEXP, SEXP yySEXP, SEXP first_hSEXP, SEXP local_qSEXP, SEXP tolSEXP, SEXP maxitSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type xx(xxSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type yy(yySEXP);
+    Rcpp::traits::input_parameter< const double& >::type first_h(first_hSEXP);
+    Rcpp::traits::input_parameter< const double& >::type local_q(local_qSEXP);
+    Rcpp::traits::input_parameter< const double& >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< const int& >::type maxit(maxitSEXP);
+    rcpp_result_gen = Rcpp::wrap(NOIS_loop(xx, yy, first_h, local_q, tol, maxit));
     return rcpp_result_gen;
 END_RCPP
 }

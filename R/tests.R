@@ -199,3 +199,49 @@
 #   class(model_output) <- "NOIS_fit"
 #   model_output
 # }
+
+
+###loop inside NOIS_fit
+# for (jj in 1:nn) {
+#
+#     xx_inner <- xx[jj]
+#     kernlist <- stats::dnorm(xx_inner - xx, 0, first_h)
+#     nz_ind <- which(kernlist != 0 & kernlist >= 1e-20)
+#     kern_nz <- rep(0, nn)
+#     kern_nz[nz_ind] <- kernlist[nz_ind]
+#     kern_nzsqrt <- rep(0, nn)
+#     kern_nzsqrt[nz_ind] <- sqrt(kern_nz[nz_ind])
+#     kern_nzsqrtinv <- rep(0, nn)
+#     kern_nzsqrtinv[nz_ind] <- 1/(kern_nzsqrt[nz_ind])
+#     qq[jj] <- qdet(local_q, length(nz_ind))
+#
+#     gamma_inner <- rep(0, nn)
+#     qq_inner <- qq[jj]
+#
+#     for (ii in 1:maxit) {
+#         yy_adj <- yy - gamma_inner
+#         local_inner <- nwestimator(xx_inner, xx, yy_adj, first_h)
+#         rr <- kern_nzsqrt * (yy - local_inner)
+#         gamma_next <- kern_nzsqrtinv * quantile_thresh(rr, qq_inner)
+#         cond_inner <- max(abs(gamma_next - gamma_inner))
+#         gamma_inner <- gamma_next
+#
+#         if (max(abs(cond_inner)) <= tol) {
+#             converge_inner <- T
+#             break
+#         } else {
+#             converge_inner = F
+#         }
+#     }
+#
+#     local_fit[jj] <- local_inner
+#     gamma_curr[, jj] <- gamma_inner
+#     converged[jj] <- converge_inner
+#     cond_check[jj] <- cond_inner
+#     iter[jj] <- ii
+#
+#     if (ii == maxit) {
+#         warning(paste("Model did not converge at j =", jj))
+#     }
+# }
+

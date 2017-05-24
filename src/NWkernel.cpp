@@ -30,6 +30,26 @@ NumericVector nwvector(const NumericVector & x, const NumericVector & y, const d
   return result;
 }
 
+// LOOCV
+double LOOCV_loop(const int & input, const IntegerVector & inds, const NumericVector & x, const NumericVector & y, const double & h) {
+  double est_val = nwestimator(x[input], x[inds != input], y[inds != input], h);
+  double sq_error = std::pow(y[input] - est_val, 2.0);
+  return sq_error;
+}
+
+// [[Rcpp::export]]
+double LOOCV(const NumericVector & x, const NumericVector & y, const double & h, const NumericVector & samp_quant) {
+  int lenx = x.size();
+  IntegerVector inds = seq(0, lenx - 1);
+  NumericVector cv(lenx);
+  for(int i = 0; i < lenx; ++i) {
+    cv[i] = LOOCV_loop(i, inds, x, y, h);
+  }
+  cv = cv[x > samp_quant[0] & x < samp_quant[1]];
+  double ret_val = sum(cv)/lenx;
+  return ret_val;
+}
+
 // [[Rcpp::export]]
 double biasnwestimator(const double & inputval, const NumericVector & xvals, const NumericVector & yvals,
                        const double & h, const double & inputnw, const NumericVector & nwvals, bool shift_sq = false) {
@@ -153,118 +173,84 @@ NumericVector quantile_thresh(NumericVector x, const int & thresh_val) {
   return zs;
 }
 
-// // not currently implemented/used
-// // [[Rcpp::export]]
-// int qdet(const double & local_q, NumericVector nz) {
-//   int ret = max(1, ceil(local_q * nz.size()));
-//   return ret;
-// }
+// [[Rcpp::export]]
+List NOIS_loop(const NumericVector & xx, const NumericVector & yy, const double & first_h,
+               const double & local_q, const double & tol, const int & maxit) {
 
-// // [[Rcpp::export]]
-// List NOIS_inner(NumericVector yy,
-//                          double xx_inner, NumericVector xx,
-//                          double first_h, NumericVector kern_nzsqrt,
-//                          NumericVector kern_nzsqrtinv,
-//                          int qq_inner, double tol, int maxit) {
-//   int n = yy.size();
-//   // declaring type
-//   NumericVector yy_adj(n);
-//   double cond_inner;
-//   NumericVector rr(n);
-//   NumericVector cond_abs(n);
-//   NumericVector gamma_diff(n);
-//   NumericVector thresh(n);
-//   int i;
-//   bool converged;
-//   List ret;
-//
-//   // outside the loop
-//   NumericMatrix gamma_curr(n, n);
-//   NumericVector gamma_inner(n);
-//   NumericVector gamma_next(n);
-//   // std::fill(gamma_next.begin(), gamma_next.end(), 0.0);
-//   // std::fill(gamma_inner.begin(), gamma_inner.end(), 0.0);
-//
-//
-//   // inside the loop
-//   for(i = 0; i < maxit; ++i) {
-//     yy_adj = yy - gamma_curr(_, i);
-//     rr = kern_nzsqrt*(yy - nwestimator(xx_inner, xx, yy_adj, first_h));
-//     gamma_next = kern_nzsqrtinv*quantile_thresh(rr, qq_inner);
-//     gamma_diff = gamma_next - gamma_curr(_ ,i);
-//     cond_abs = abs(gamma_diff);
-//     cond_inner = max(cond_abs);
-//     gamma_curr(_, i+1) = gamma_next;
-//     if (cond_inner <= tol) {
-//       break;
-//     }
-//   }
-//   // return gamma_diff;
-//   ret["gamma"] = gamma_curr(_, i);
-//   ret["iter"] = i;
-//   ret["converged"] = converged;
-//   return ret;
-// }
+  int nn = xx.size();
+  //declaring type
+  double xx_inner;
+  NumericVector yy_adj(nn);
+  NumericVector kernlist(nn);
+  NumericVector kernlist_nzind;
+  NumericVector kern_nzsqrt(nn);
+  NumericVector kern_nzsqrt_sub;
+  NumericVector kern_nzsqrtinv(nn);
+  NumericVector kern_nzsqrtinv_sub;
+  IntegerVector nz_ind;
+  IntegerVector nz_tmp = seq_len(nn) - 1;
+  IntegerVector qq(nn);
+  int qq_inner;
+  NumericVector rr(nn);
+  NumericVector cond_abs(nn);
+  NumericVector gamma_diff(nn);
+  NumericVector thresh(nn);
+  double cond_inner;
+  NumericVector cond_check(nn);
+  IntegerVector iter(nn);
+  int i;
+  IntegerVector converged(nn);
 
+  List ret;
 
-// // [[Rcpp::export]]
-// List NOIS_loop(NumericVector xx, NumericVector yy, int nn, double first_h, double local_q, double tol, int maxit) {
-//
-//   //   // declaring type
-//   double xx_inner;
-//   NumericVector yy_adj(nn);
-//   double cond_inner;
-//   NumericVector kernlist(nn);
-//   NumericVector kern_nz(nn);
-//   NumericVector kern_nzsqrt(nn);
-//   NumericVector kern_nzsqrtinv(nn);
-//   NumericVector kern_nzsqrtinv_sub;
-//   IntegerVector nz_ind;
-//   NumericVector qq(nn);
-//   NumericVector rr(nn);
-//   NumericVector cond_abs(nn);
-//   NumericVector gamma_diff(nn);
-//   NumericVector thresh(nn);
-//   int i;
-//   bool converged;
-//   List ret;
-//
-//   NumericMatrix gamma_curr(nn, nn);
-//   NumericVector gamma_inner(nn);
-//   NumericVector gamma_next(nn);
-//
-//   for(int jj = 0; jj < nn; ++jj) {
-//
-// // #     kernlist <- dnorm(xx_inner - xx, 0, first_h)
-// // #     nz_ind <- which(kernlist != 0 & kernlist >= 1e-20)
-// // #     kern_nz <- rep(0, nn)
-// // #     kern_nz[nz_ind] <- kernlist[nz_ind]
-// // #     kern_nzsqrt <- rep(0, nn)
-// // #     kern_nzsqrt[nz_ind] <- sqrt(kern_nz)[nz_ind]
-// // #     kern_nzsqrtinv <- rep(0, nn)
-// // #     kern_nzsqrtinv[nz_ind] <- 1/kern_nzsqrt[nz_ind]
-// // #     qq[jj] <- qdet(local_q, kern_nz)
-//     xx_inner = xx(jj);
-//     kernlist = dnorm(xx_inner - xx, 0, first_h);
-//     nz_ind = seq_len(nn) - 1;
-//     nz_ind = nz_ind[kernlist != 0 & kernlist >= 1e-20];
-//     std::fill(kern_nz.begin(), kern_nz.end(), 0.0);
-//     kern_nz[nz_ind] = kernlist[nz_ind];
-//     std::fill(kern_nzsqrt.begin(), kern_nzsqrt.end(), 0.0);
-//     kern_nzsqrt[nz_ind] = sqrt(kern_nz[nz_ind]);
-//     std::fill(kern_nzsqrtinv.begin(), kern_nzsqrtinv.end(), 0.0);
-//     kern_nzsqrtinv_sub = kern_nzsqrt[nz_ind];
-//     kern_nzsqrtinv_sub = 1.0/kern_nzsqrtinv_sub;
-//     kern_nzsqrtinv[nz_ind] = kern_nzsqrtinv_sub;
-//     qq[jj] = max(1, ceil(local_q * nz_ind.size()));
-//
-//
-//     for(i = 0; i < maxit; ++i) {
-//
-//     }
-//
-//   }
-//
-// }
+  double local_inner;
+  NumericVector local_fit(nn);
+  NumericMatrix gamma_curr(nn, nn);
+  NumericVector gamma_inner(nn);
+  NumericVector gamma_next(nn);
 
+  for(int jj = 0; jj < nn; ++jj) {
+
+    xx_inner = xx[jj];
+    kernlist = dnorm(xx_inner - xx, 0.0, first_h);
+    nz_ind = nz_tmp;
+    nz_ind = nz_ind[kernlist != 0.0 & kernlist >= 1e-20];
+    kernlist_nzind = kernlist[nz_ind];
+    std::fill(kern_nzsqrt.begin(), kern_nzsqrt.end(), 0.0);
+    kern_nzsqrt_sub = sqrt(kernlist_nzind);
+    kern_nzsqrt[nz_ind] = kern_nzsqrt_sub;
+    std::fill(kern_nzsqrtinv.begin(), kern_nzsqrtinv.end(), 0.0);
+    kern_nzsqrtinv_sub = 1.0/kern_nzsqrt_sub;
+    kern_nzsqrtinv[nz_ind] = kern_nzsqrtinv_sub;
+    qq[jj] = ceil(local_q * nz_ind.size());
+    qq_inner = qq[jj];
+
+    for(i = 0; i < maxit; ++i) {
+      yy_adj = yy - gamma_curr(_, jj);
+      local_inner = nwestimator(xx_inner, xx, yy_adj, first_h);
+      rr = kern_nzsqrt * (yy - local_inner);
+      gamma_next = kern_nzsqrtinv * quantile_thresh(rr, qq_inner);
+      gamma_diff = gamma_next - gamma_curr(_, jj);
+      cond_abs = abs(gamma_diff);
+      cond_inner = max(cond_abs);
+      gamma_curr(_, jj) = gamma_next;
+      if (cond_inner <= tol) {
+        converged[jj] = 1;
+        break;
+      }
+    }
+    local_fit[jj] = local_inner;
+    cond_check[jj] = cond_inner;
+    iter[jj] = i;
+  }
+
+  ret["local_fit"] = local_fit;
+  ret["gamma_curr"] = gamma_curr;
+  ret["iter"] = iter;
+  ret["cond_check"] = cond_check;
+  ret["converged"] = converged;
+  ret["qq_inner"] = qq;
+  return ret;
+
+}
 

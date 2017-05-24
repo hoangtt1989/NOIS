@@ -5,24 +5,24 @@ weightfun <- function(input, samp_quant) {
     return(output)
 }
 
-#' @keywords internal
-LOOCV_loop <- function(input, x, y, bandwidth) {
-  est_val <- nwestimator(x[input], x[-input], y[-input], bandwidth)
-  sq_error <- (y[input] - est_val)^2
-  return(sq_error)
-}
+###rewritten in NWkernel.cpp#' @keywords internal
+# LOOCV_loop <- function(input, x, y, bandwidth) {
+#   est_val <- nwestimator(x[input], x[-input], y[-input], bandwidth)
+#   sq_error <- (y[input] - est_val)^2
+#   return(sq_error)
+# }
 
 #' LOOCV
-#' @keywords internal
-LOOCV <- function(x, y, bandwidth, samp_quant) {
-    lenx <- length(x)
-
-    cv <- vapply(1:lenx, LOOCV_loop, numeric(1), x, y, bandwidth)
-    wts <- weightfun(x, samp_quant)
-    cv <- cv * wts
-
-    return(sum(cv)/lenx)
-}
+# #' @keywords internal
+# LOOCV <- function(x, y, bandwidth, samp_quant) {
+#     lenx <- length(x)
+#
+#     cv <- vapply(1:lenx, LOOCV_loop, numeric(1), x, y, bandwidth)
+#     wts <- weightfun(x, samp_quant)
+#     cv <- cv * wts
+#
+#     return(sum(cv)/lenx)
+# }
 
 #' Leave-one-out cross-validation
 #'

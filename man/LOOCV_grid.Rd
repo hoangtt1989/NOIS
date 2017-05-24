@@ -2,7 +2,8 @@
 % Please edit documentation in R/cross_validation.R
 \name{LOOCV_grid}
 \alias{LOOCV_grid}
-\title{Leave-one-out cross-validation}
+\title{LOOCV
+Leave-one-out cross-validation}
 \usage{
 LOOCV_grid(x, y, hgrid = seq(from = 0.05, to = 3, length.out = 80),
   weight_probs = c(0.05, 0.95))
