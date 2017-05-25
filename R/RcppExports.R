@@ -9,8 +9,8 @@ nwvector <- function(x, y, h) {
     .Call('NOIS_nwvector', PACKAGE = 'NOIS', x, y, h)
 }
 
-LOOCV <- function(x, y, h, samp_quant) {
-    .Call('NOIS_LOOCV', PACKAGE = 'NOIS', x, y, h, samp_quant)
+LOOCV <- function(x, y, h, ind_keep) {
+    .Call('NOIS_LOOCV', PACKAGE = 'NOIS', x, y, h, ind_keep)
 }
 
 biasnwestimator <- function(inputval, xvals, yvals, h, inputnw, nwvals, shift_sq = FALSE) {

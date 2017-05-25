@@ -4,15 +4,15 @@
 \alias{MCV_grid}
 \title{Modified cross-validation}
 \usage{
-MCV_grid(x, y, m = 0.6, a = 0.75, b = 10, eps0 = 1/175, gridlen = 100,
-  weight_probs = c(0.05, 0.95))
+MCV_grid(x, y, m_brk = 0.6, a = 0.75, b = 10, eps0 = 1/175,
+  gridlen = 100, weight_probs = c(0.05, 0.95))
 }
 \arguments{
 \item{x}{'x' values.}
 
 \item{y}{'y' values.}
 
-\item{m}{The fraction of observations used for training. This is the most sensitive parameter.}
+\item{m_brk}{The fraction of observations used for training. This is the most sensitive parameter.}
 
 \item{a}{Constant for tuning grid (not recommended to change).}
 

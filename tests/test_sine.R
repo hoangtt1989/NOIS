@@ -18,6 +18,11 @@
 #
 # fit <- NOIS_fit(data, CV_method = 'MCV')
 # fit
+# outlier_plot(fit)
+#
+# opt_BIC <- BIC_tuner(data)
+# opt_fit <- opt_BIC$opt_fit
+# opt_fit
 # microbenchmark::microbenchmark(
 #   NOIS_fit_lapply(data, CV_method = 'MCV'),
 #   NOIS_fit_loop(data, CV_method = 'MCV')

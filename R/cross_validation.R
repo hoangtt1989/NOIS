@@ -38,8 +38,10 @@ weightfun <- function(input, samp_quant) {
 #' @export
 LOOCV_grid <- function(x, y, hgrid = seq(from = 0.05, to = 3, length.out = 80), weight_probs = c(0.05, 0.95)) {
     samp_quant <- stats::quantile(x, weight_probs)
+    ind_keep <- which(x > samp_quant[1] & x < samp_quant[2]) - 1
     cvs <- vapply(hgrid, function(input) {
-        LOOCV(x, y, input, samp_quant)
+        # LOOCV(x, y, input, samp_quant)
+      LOOCV(x, y, input, ind_keep)
     }, numeric(1))
     min_index <- which.min(cvs)
     min_h <- hgrid[min_index]
@@ -58,13 +60,14 @@ MCV_loopfun <- function(input, nextmx, nextmy, firstmx, firstmy, bandwidth) {
 
 #' MCV
 #' @keywords internal
-MCV <- function(nextmx, nextmy, firstmx, firstmy, bandwidth, samp_quant) {
+MCV <- function(nextmx, nextmy, firstmx, firstmy, bandwidth) {
 
     lenmx <- length(nextmx)
 
     ecv <- vapply(1:lenmx, MCV_loopfun, numeric(1), nextmx, nextmy, firstmx, firstmy, bandwidth)
-    wts <- weightfun(nextmx, samp_quant)
-    ecv <- ecv * wts
+    # wts <- weightfun(nextmx, samp_quant)
+    # ecv <- ecv * wts
+    # ecv <- ecv[nextmx > weight_probs[0] & nextmx < weight_probs[1]]
     output <- sum(ecv)/(lenmx)
     return(output)
 
@@ -76,7 +79,7 @@ MCV <- function(nextmx, nextmy, firstmx, firstmy, bandwidth, samp_quant) {
 #'
 #' @param x 'x' values.
 #' @param y 'y' values.
-#' @param m The fraction of observations used for training. This is the most sensitive parameter.
+#' @param m_brk The fraction of observations used for training. This is the most sensitive parameter.
 #' @param a Constant for tuning grid (not recommended to change).
 #' @param b Constant for tuning grid (not recommended to change).
 #' @param eps0 Constant for tuning grid (not recommended to change).
@@ -86,26 +89,29 @@ MCV <- function(nextmx, nextmy, firstmx, firstmy, bandwidth, samp_quant) {
 #' @return The minimum bandwidth h, the minimum CV error and the grid of test bandwidths.
 #' @family NOIS CV functions
 #' @export
-MCV_grid <- function(x, y, m = 0.6, a = 0.75, b = 10, eps0 = 1/175, gridlen = 100, weight_probs = c(0.05, 0.95)) {
-    samp_quant <- stats::quantile(x, probs = weight_probs)
-    m = floor(m * length(x))
-    firstmx <- x[1:m]
-    firstmy <- y[1:m]
-    nextmx <- x[(m + 1):length(x)]
-    nextmy <- y[(m + 1):length(y)]
-    hgrid <- seq(from = a * m^(-1/5 - eps0), to = b * m^(-1/5 + eps0), length.out = gridlen)
+MCV_grid <- function(x, y, m_brk = 0.6, a = 0.75, b = 10, eps0 = 1/175, gridlen = 100, weight_probs = c(0.05, 0.95)) {
+    m_brk = floor(m_brk * length(x))
+    firstmx <- x[1:m_brk]
+    firstmy <- y[1:m_brk]
+    nextmx <- x[(m_brk + 1):length(x)]
+    nextmy <- y[(m_brk + 1):length(y)]
+    samp_quant <- stats::quantile(nextmx, probs = weight_probs)
+    ind_keep <- which(nextmx > samp_quant[1] & nextmx < samp_quant[2])
+    nextmx <- nextmx[ind_keep]
+    nextmy <- nextmy[ind_keep]
+    hgrid <- seq(from = a * m_brk^(-1/5 - eps0), to = b * m_brk^(-1/5 + eps0), length.out = gridlen)
     ecvs <- vapply(hgrid, function(input) {
-        MCV(nextmx, nextmy, firstmx, firstmy, input, samp_quant)
+        MCV(nextmx, nextmy, firstmx, firstmy, input)
     }, numeric(1))
     min_index <- which.min(ecvs)
-    min_h <- hgrid[min_index] * (m/length(x))^(1/5)
+    min_h <- hgrid[min_index] * (m_brk/length(x))^(1/5)
     return(list(min_h = min_h, min_CV = ecvs[min_index], hgrid = hgrid))
 }
 
 
 #' PCV
 #' @keywords internal
-PCV <- function(data, bandwidth, g, samp_quant) {
+PCV <- function(data, bandwidth, g, weight_probs) {
     n <- nrow(data)
     dat_num <- g * floor(n/g)
     dat_sub <- data[1:dat_num, ]
@@ -117,10 +123,13 @@ PCV <- function(data, bandwidth, g, samp_quant) {
     })
 
     cv_err <- vapply(dat_grp, function(dat_in) {
-        ret <- LOOCV(dat_in$x, dat_in$y, bandwidth, samp_quant)
+        samp_quant <- stats::quantile(dat_in$x, weight_probs)
+        ind_keep <- which(dat_in$x > samp_quant[1] & dat_in$x < samp_quant[2])
+      # ret <- LOOCV(dat_in$x, dat_in$y, bandwidth)
+        ret <- LOOCV(dat_in$x, dat_in$y, bandwidth, ind_keep)
     }, numeric(1))
 
-    pcv_err <- mean(cv_err)
+    pcv_err <- sum(cv_err)/g
 }
 
 #' Partitioned cross-validation
@@ -139,10 +148,10 @@ PCV <- function(data, bandwidth, g, samp_quant) {
 #' @export
 PCV_grid <- function(x, y, hgrid = seq(from = 0.05, to = 3, length.out = 100), g = floor(length(x)/5), weight_probs = c(0.05,
     0.95)) {
-    samp_quant <- stats::quantile(x, probs = weight_probs)
+    # samp_quant <- stats::quantile(x, probs = weight_probs)
     data <- data.frame(x = x, y = y)
     cvs <- vapply(hgrid, function(input) {
-        PCV(data, input, g, samp_quant)
+        PCV(data, input, g, weight_probs)
     }, numeric(1))
     min_index <- which.min(cvs)
     min_h <- hgrid[min_index]

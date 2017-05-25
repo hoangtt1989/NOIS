@@ -33,16 +33,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // LOOCV
-double LOOCV(const NumericVector& x, const NumericVector& y, const double& h, const NumericVector& samp_quant);
-RcppExport SEXP NOIS_LOOCV(SEXP xSEXP, SEXP ySEXP, SEXP hSEXP, SEXP samp_quantSEXP) {
+double LOOCV(const NumericVector& x, const NumericVector& y, const double& h, const IntegerVector& ind_keep);
+RcppExport SEXP NOIS_LOOCV(SEXP xSEXP, SEXP ySEXP, SEXP hSEXP, SEXP ind_keepSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type x(xSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const double& >::type h(hSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type samp_quant(samp_quantSEXP);
-    rcpp_result_gen = Rcpp::wrap(LOOCV(x, y, h, samp_quant));
+    Rcpp::traits::input_parameter< const IntegerVector& >::type ind_keep(ind_keepSEXP);
+    rcpp_result_gen = Rcpp::wrap(LOOCV(x, y, h, ind_keep));
     return rcpp_result_gen;
 END_RCPP
 }

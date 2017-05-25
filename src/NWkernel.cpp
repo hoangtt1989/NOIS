@@ -38,17 +38,18 @@ double LOOCV_loop(const int & input, const IntegerVector & inds, const NumericVe
 }
 
 // [[Rcpp::export]]
-double LOOCV(const NumericVector & x, const NumericVector & y, const double & h, const NumericVector & samp_quant) {
+double LOOCV(const NumericVector & x, const NumericVector & y, const double & h, const IntegerVector & ind_keep) {
   int lenx = x.size();
   IntegerVector inds = seq(0, lenx - 1);
   NumericVector cv(lenx);
   for(int i = 0; i < lenx; ++i) {
     cv[i] = LOOCV_loop(i, inds, x, y, h);
   }
-  cv = cv[x > samp_quant[0] & x < samp_quant[1]];
+  cv = cv[ind_keep];
   double ret_val = sum(cv)/lenx;
   return ret_val;
 }
+
 
 // [[Rcpp::export]]
 double biasnwestimator(const double & inputval, const NumericVector & xvals, const NumericVector & yvals,
@@ -195,7 +196,7 @@ List NOIS_loop(const NumericVector & xx, const NumericVector & yy, const double 
   NumericVector cond_abs(nn);
   NumericVector gamma_diff(nn);
   NumericVector thresh(nn);
-  double cond_inner;
+  double cond_inner = 0.0;
   NumericVector cond_check(nn);
   IntegerVector iter(nn);
   int i;
@@ -203,7 +204,7 @@ List NOIS_loop(const NumericVector & xx, const NumericVector & yy, const double 
 
   List ret;
 
-  double local_inner;
+  double local_inner = 0.0;
   NumericVector local_fit(nn);
   NumericMatrix gamma_curr(nn, nn);
   NumericVector gamma_inner(nn);
@@ -214,7 +215,7 @@ List NOIS_loop(const NumericVector & xx, const NumericVector & yy, const double 
     xx_inner = xx[jj];
     kernlist = dnorm(xx_inner - xx, 0.0, first_h);
     nz_ind = nz_tmp;
-    nz_ind = nz_ind[kernlist != 0.0 & kernlist >= 1e-20];
+    nz_ind = nz_ind[(kernlist != 0.0) & (kernlist >= 1e-20)];
     kernlist_nzind = kernlist[nz_ind];
     std::fill(kern_nzsqrt.begin(), kern_nzsqrt.end(), 0.0);
     kern_nzsqrt_sub = sqrt(kernlist_nzind);

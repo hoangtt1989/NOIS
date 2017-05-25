@@ -4,7 +4,7 @@
 \alias{PCV}
 \title{PCV}
 \usage{
-PCV(data, bandwidth, g, samp_quant)
+PCV(data, bandwidth, g, weight_probs)
 }
 \description{
 PCV

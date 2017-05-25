@@ -4,7 +4,7 @@
 \alias{MCV}
 \title{MCV}
 \usage{
-MCV(nextmx, nextmy, firstmx, firstmy, bandwidth, samp_quant)
+MCV(nextmx, nextmy, firstmx, firstmy, bandwidth)
 }
 \description{
 MCV

@@ -1,9 +1,9 @@
 
-#' @keywords internal
-qdet <- function(local_q = 0.1, nz) {
-    ret_val <- max(1, ceiling(local_q * nz))
-    return(ret_val)
-}
+#' #' @keywords internal
+#' qdet <- function(local_q = 0.1, nz) {
+#'     ret_val <- max(1, ceiling(local_q * nz))
+#'     return(ret_val)
+#' }
 
 #' Tuning modified BIC for NOIS
 #'
@@ -40,7 +40,11 @@ BIC_tuner <- function(data, q_tst = 1:floor(nrow(data)/3), bias_correct = T, par
     if (min_ind == q_tst[1] | min_ind == q_tst[length(q_tst)]) {
         warning("Minimum BIC is at the edge of the grid")
     }
-    opt_fit <- ifelse(return_fit, NOIS_fit(data, pool_q = min_ind, ...), NULL)
+    if (return_fit) {
+      opt_fit <- NOIS_fit(data, pool_q = min_ind, ...)
+    } else {
+      opt_fit <- NULL
+    }
     return(list(q_tst = q_tst, min_q = min_ind, opt_fit = opt_fit, BIC_vals = BIC_vals, df_vals = df_vals))
 }
 

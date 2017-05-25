@@ -2,7 +2,12 @@
 % Please edit documentation in R/NOIS.R
 \name{BIC_tuner}
 \alias{BIC_tuner}
-\title{Tuning modified BIC for NOIS}
+\title{#' @keywords internal
+qdet <- function(local_q = 0.1, nz) {
+    ret_val <- max(1, ceiling(local_q * nz))
+    return(ret_val)
+}
+Tuning modified BIC for NOIS}
 \usage{
 BIC_tuner(data, q_tst = 1:floor(nrow(data)/3), bias_correct = T,
   parallel = F, return_fit = T, ...)
