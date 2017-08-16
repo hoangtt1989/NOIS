@@ -245,3 +245,28 @@
 #     }
 # }
 
+
+
+#' #' Construct a \code{data_frame} from a \code{NOIS_fit}.
+#' #'
+#' #' Construct a \code{data_frame} using output from a \code{NOIS_fit}.
+#' #'
+#' #' @param NOIS_fit A \code{NOIS_fit}
+#' #' @return A \code{data_frame} with the following columns.
+#' #' \item{\code{x}}{'x' values.}
+#' #' \item{\code{y}}{'y' values.}
+#' #' \item{\code{y_adj}}{Pooled adjusted 'y' values.}
+#' #' \item{\code{fit}}{Pooled NOIS fit without bias correction.}
+#' #' \item{\code{bias}}{Pooled NOIS fit with bias correction.}
+#' #' \item{\code{outlier}}{A logical indicating whether this point is an outlier.}
+#' #' @export
+#' NOIS_df <- function(NOIS_fit) {
+#'   if (class(NOIS_fit) != "NOIS_fit") {
+#'     stop("Input must be a NOIS_fit")
+#'   }
+#'   outlier_index <- rep(FALSE, length(NOIS_fit$x))
+#'   outlier_index[NOIS_fit$pool_outlier] <- TRUE
+#'   df <- with(NOIS_fit, tibble::data_frame(x = x, y = y, y_adj = y_adj, fit = pool_fit, bias_fit = bias_pool_fit,
+#'                                           outlier = outlier_index))
+#' }
+

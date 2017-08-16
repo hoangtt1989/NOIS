@@ -18,9 +18,11 @@ orig_func <- sin(xt)
 data <- data.frame(x=xt, y=yt)
 
 test_that('Detected outliers match true outliers', {
-  expect_equal(length(intersect(NOIS_fit(data, CV_method = 'MCV')$pool_outlier, outliers)), nout)
-  expect_equal(length(intersect(NOIS_fit(data, CV_method = 'PCV')$pool_outlier, outliers)), nout)
-  expect_equal(length(intersect(NOIS_fit(data, CV_method = 'LOOCV')$pool_outlier, outliers)), nout)
+  expect_equal(length(intersect(which(NOIS_fit(data, CV_method = 'MCV')$fit_df$outlier), outliers)), nout)
+  expect_equal(length(intersect(which(NOIS_fit(data, CV_method = 'PCV')$fit_df$outlier), outliers)), nout)
+  expect_equal(length(intersect(which(NOIS_fit(data, CV_method = 'LOOCV')$fit_df$outlier), outliers)), nout)
+  # expect_equal(length(intersect(NOIS_fit(data, CV_method = 'PCV')$pool_outlier, outliers)), nout)
+  # expect_equal(length(intersect(NOIS_fit(data, CV_method = 'LOOCV')$pool_outlier, outliers)), nout)
 })
 
 test_that('BIC tuning', {

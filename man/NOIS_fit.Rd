@@ -37,22 +37,15 @@ For integers \eqn{\ge 1} this is the number of points detected as outliers.}
 }
 \value{
 An object of class '\code{NOIS_fit}' that is a list with the following components.
+\item{\code{fit_df}}{A \code{data_frame} with columns specifying the original 'x' and 'y' values, the pooled adjusted 'y' values, a logical indicating whether the observation is an outlier, the pooled non-bias corrected and bias corrected fits, and the non-robust non-bias corrected and bias corrected fits.}
 \item{\code{local_fit}}{Unpooled NOIS fits.}
-\item{\code{pool_fit}}{Pooled NOIS fit.}
-\item{\code{bias_pool_fit}}{Bias corrected pooled NOIS fit.}
-\item{\code{first_fit}}{The first (non-robust) kernel smoothing fit.}
-\item{\code{bias_first_fit}}{The first (non-robust) bias corrected kernel smoothing fit.}
 \item{\code{local_gamma}}{The unpooled \eqn{\gamma} estimates.}
 \item{\code{pool_gamma}}{The pooled \eqn{\gamma} estimate.}
-\item{\code{pool_outlier}}{The positions of the pooled outlier estimates.}
 \item{\code{local_q}}{Fraction of points detected as outliers for each unpooled fit.}
 \item{\code{pool_q}}{Pooled outlier detection. For numerics \eqn{\in (0, 1)},
 this is the fraction of points detected as outliers.
 For integers \eqn{\ge 1} this is the number of points detected as outliers.}
 \item{\code{pool_nonout}}{The positions of the clean observations.}
-\item{\code{x}}{Original 'x' values.}
-\item{\code{y_adj}}{Pooled adjusted 'y' values.}
-\item{\code{y}}{Original 'x' values.}
 \item{code{CV}}{A list with cross-validation information.}
 \item{code{conv}}{A list with convergence information.}
 }

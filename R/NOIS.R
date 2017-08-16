@@ -63,21 +63,24 @@ BIC_NOIS <- function(NOIS_fit, bias_correct = T) {
     if (class(NOIS_fit) != "NOIS_fit") {
         stop("Input must be a NOIS_fit")
     }
-    npts <- length(NOIS_fit$y)
+    # npts <- length(NOIS_fit$y)
+    npts <- length(NOIS_fit$fit_df$y)
     smooth_df <- do.call(rbind, lapply(1:npts, function(ind) {
-        tmp <- stats::dnorm(NOIS_fit$x[ind] - NOIS_fit$x, 0, NOIS_fit$CV$pool_h)
+        # tmp <- stats::dnorm(NOIS_fit$x[ind] - NOIS_fit$x, 0, NOIS_fit$CV$pool_h)
+        tmp <- stats::dnorm(NOIS_fit$fit_df$x[ind] - NOIS_fit$fit_df$x, 0, NOIS_fit$CV$pool_h)
         ret <- tmp/sum(tmp)
         return(ret)
     }))
     if (bias_correct) {
-        fit <- NOIS_fit$bias_pool_fit
+        # fit <- NOIS_fit$bias_pool_fit
+        fit <- NOIS_fit$fit_df$bias_fit
         # df calculation is different for bias fit
         m <- sum(diag(2 * smooth_df - smooth_df %*% smooth_df))
     } else {
-        fit <- NOIS_fit$local_fit
+        fit <- NOIS_fit$fit_df$fit
         m <- sum(diag(smooth_df))
     }
-    BIC_val <- (npts - m) * log(sum((NOIS_fit$y_adj - fit)^2)/(npts - m)) + (NOIS_fit$pool_q + 1) * (log(npts -
+    BIC_val <- (npts - m) * log(sum((NOIS_fit$fit_df$y_adj - fit)^2)/(npts - m)) + (NOIS_fit$pool_q + 1) * (log(npts -
         m) + 1)
     return(list(BIC = BIC_val, df = m))
 }
@@ -102,22 +105,15 @@ BIC_NOIS <- function(NOIS_fit, bias_correct = T) {
 #' @param maxit Maximum number of iterations for each individual kernel smoothing fit.
 #' @param ... Additional arguments passed to the \code{CV_method}.
 #' @return An object of class '\code{NOIS_fit}' that is a list with the following components.
+#' \item{\code{fit_df}}{A \code{data_frame} with columns specifying the original 'x' and 'y' values, the pooled adjusted 'y' values, a logical indicating whether the observation is an outlier, the pooled non-bias corrected and bias corrected fits, and the non-robust non-bias corrected and bias corrected fits.}
 #' \item{\code{local_fit}}{Unpooled NOIS fits.}
-#' \item{\code{pool_fit}}{Pooled NOIS fit.}
-#' \item{\code{bias_pool_fit}}{Bias corrected pooled NOIS fit.}
-#' \item{\code{first_fit}}{The first (non-robust) kernel smoothing fit.}
-#' \item{\code{bias_first_fit}}{The first (non-robust) bias corrected kernel smoothing fit.}
 #' \item{\code{local_gamma}}{The unpooled \eqn{\gamma} estimates.}
 #' \item{\code{pool_gamma}}{The pooled \eqn{\gamma} estimate.}
-#' \item{\code{pool_outlier}}{The positions of the pooled outlier estimates.}
 #' \item{\code{local_q}}{Fraction of points detected as outliers for each unpooled fit.}
 #' \item{\code{pool_q}}{Pooled outlier detection. For numerics \eqn{\in (0, 1)},
 #' this is the fraction of points detected as outliers.
 #' For integers \eqn{\ge 1} this is the number of points detected as outliers.}
 #' \item{\code{pool_nonout}}{The positions of the clean observations.}
-#' \item{\code{x}}{Original 'x' values.}
-#' \item{\code{y_adj}}{Pooled adjusted 'y' values.}
-#' \item{\code{y}}{Original 'x' values.}
 #' \item{code{CV}}{A list with cross-validation information.}
 #' \item{code{conv}}{A list with convergence information.}
 #' @examples
@@ -245,9 +241,16 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
     # convergence
     conv <- list(iter = iter, time = etm, converged = converged, cond_check = cond_check)
 
-    model_output <- list(local_fit = local_fit, pool_fit = pool_fit, bias_pool_fit = bias_pool_fit, first_fit = nw_ests,
-        bias_first_fit = bias_nw_ests, local_gamma = gamma_curr, pool_gamma = gam_val, pool_outlier = gam_ind,
-        local_q = qq_inner, pool_q = pool_q, pool_nonout = pool_nonout, x = xx, y_adj = pool_y_adj, y = yy, CV = CV, conv = conv)
+    # data_frame with relevant fits
+    outlier_index <- rep(FALSE, length(xx))
+    outlier_index[gam_ind] <- TRUE
+    out_df <- tibble::data_frame(x = xx, y = yy, y_adj = pool_y_adj, outlier = outlier_index, fit = pool_fit,
+                         bias_fit = bias_pool_fit, nr_fit = nw_ests, nr_bias_fit = bias_nw_ests)
+
+    model_output <- list(fit_df = out_df, local_fit = local_fit, local_gamma = gamma_curr, pool_gamma = gam_val, local_q = qq_inner, pool_q = pool_q, pool_nonut = pool_nonout, CV = CV, conv = conv)
+    # model_output <- list(local_fit = local_fit, pool_fit = pool_fit, bias_pool_fit = bias_pool_fit, first_fit = nw_ests,
+    #     bias_first_fit = bias_nw_ests, local_gamma = gamma_curr, pool_gamma = gam_val, pool_outlier = gam_ind,
+    #     local_q = qq_inner, pool_q = pool_q, pool_nonout = pool_nonout, x = xx, y_adj = pool_y_adj, y = yy, CV = CV, conv = conv)
     class(model_output) <- "NOIS_fit"
     model_output
 }
@@ -258,35 +261,12 @@ NOIS_fit <- function(data, x = "x", y = "y", CV_method = "LOOCV", first_h = NULL
 #' @param ... Not used.
 #' @export
 print.NOIS_fit <- function(x, ...) {
-    cat("Number of detected outliers =", length(x$pool_outlier), "\nNumber of observations =", length(x$y), "\nTime =",
-        x$conv$time[3], "\nConvergence =", all(as.logical(x$conv$converged)), "\nMSE =", mean((x$y_adj - x$pool_fit)^2),
-        "\nBias corrected MSE =", mean((x$y_adj - x$bias_pool_fit)^2), "\nFirst optimal bandwidth =", x$CV$first_h,
+    cat("Number of detected outliers =", length(which(x$fit_df$outlier)), "\nNumber of observations =", length(x$fit_df$y), "\nTime =",
+        x$conv$time[3], "\nConvergence =", all(as.logical(x$conv$converged)), "\nMSE =", mean((x$fit_df$y_adj - x$fit_df$fit)^2),
+        "\nBias corrected MSE =", mean((x$fit_df$y_adj - x$fit_df$bias_fit)^2), "\nFirst optimal bandwidth =", x$CV$first_h,
         "\nPooled optimal bandwidth =", x$CV$pool_h)
 }
 
-
-#' Construct a \code{data_frame} from a \code{NOIS_fit}.
-#'
-#' Construct a \code{data_frame} using output from a \code{NOIS_fit}.
-#'
-#' @param NOIS_fit A \code{NOIS_fit}
-#' @return A \code{data_frame} with the following columns.
-#' \item{\code{x}}{'x' values.}
-#' \item{\code{y}}{'y' values.}
-#' \item{\code{y_adj}}{Pooled adjusted 'y' values.}
-#' \item{\code{fit}}{Pooled NOIS fit without bias correction.}
-#' \item{\code{bias}}{Pooled NOIS fit with bias correction.}
-#' \item{\code{outlier}}{A logical indicating whether this point is an outlier.}
-#' @export
-NOIS_df <- function(NOIS_fit) {
-    if (class(NOIS_fit) != "NOIS_fit") {
-        stop("Input must be a NOIS_fit")
-    }
-    outlier_index <- rep(FALSE, length(NOIS_fit$x))
-    outlier_index[NOIS_fit$pool_outlier] <- TRUE
-    df <- with(NOIS_fit, tibble::data_frame(x = x, y = y, y_adj = y_adj, fit = pool_fit, bias_fit = bias_pool_fit,
-        outlier = outlier_index))
-}
 
 #' Create a plot highlighting the outliers and a NOIS curve.
 #'
@@ -304,7 +284,8 @@ outlier_plot <- function(NOIS_fit, color = "outlier", ..., bias_correct = T) {
         stop("Input must be a NOIS_fit")
     }
     fit_type <- ifelse(bias_correct, "bias_fit", "fit")
-    df <- NOIS_df(NOIS_fit)
+    # df <- NOIS_df(NOIS_fit)
+    df <- NOIS_fit$fit_df
     pt <- ggplot2::ggplot(df) + ggplot2::geom_point(ggplot2::aes_string(x = "x", y = "y", color = color, ...)) +
         ggplot2::geom_line(ggplot2::aes_string(x = "x", y = fit_type))
     pt

@@ -39,22 +39,22 @@ biascvloop <- function(input, x, y, nwvals, bandwidth, shift_sq = FALSE) {
 #' @export
 pred_resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_correct = T, parallel = F,
     B = 500) {
-    x <- NOIS_fit$x
+    x <- NOIS_fit$fit_df$x
     if (fit_type == "NOIS") {
-        y <- NOIS_fit$y_adj
+        y <- NOIS_fit$fit_df$y_adj
         bandwidth <- NOIS_fit$CV$pool_h
-        theta <- NOIS_fit$pool_fit
+        theta <- NOIS_fit$fit_df$fit
         if (bias_correct == T) {
-            theta <- NOIS_fit$bias_pool_fit
-            nw_est <- NOIS_fit$pool_fit
+            theta <- NOIS_fit$fit_df$bias_fit
+            nw_est <- NOIS_fit$fit_df$fit
         }
     } else if (fit_type == "regular") {
         y <- NOIS_fit$y
         bandwidth <- NOIS_fit$CV$first_h
-        theta <- NOIS_fit$first_fit
+        theta <- NOIS_fit$fit_df$nr_fit
         if (bias_correct == T) {
-            theta <- NOIS_fit$bias_first_fit
-            nw_est <- NOIS_fit$first_fit
+            theta <- NOIS_fit$fit_df$nr_bias_fit
+            nw_est <- NOIS_fit$fit_df$nr_fit
         }
     } else {
         stop("Must supply valid fit_type: NOIS or regular.")
@@ -131,24 +131,26 @@ resids_func <- function(x, func_est, first_resid, bandwidth, bias_correct) {
 #' @importFrom foreach %dopar%
 #' @export
 resid_BS_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_correct = T, parallel = F, B = 500) {
-    x <- NOIS_fit$x
+    x <- NOIS_fit$fit_df$x
     if (fit_type == "NOIS") {
-        y <- NOIS_fit$y_adj
+        y <- NOIS_fit$fit_df$y_adj
         bandwidth <- NOIS_fit$CV$pool_h
-        func_est <- NOIS_fit$pool_fit
+        func_est <- NOIS_fit$fit_df$fit
         if (bias_correct == T) {
-            func_est <- NOIS_fit$bias_pool_fit
+            func_est <- NOIS_fit$fit_df$bias_fit
         }
     } else if (fit_type == "regular") {
-        y <- NOIS_fit$y
+        y <- NOIS_fit$fit_df$y
         bandwidth <- NOIS_fit$CV$first_h
-        func_est <- NOIS_fit$first_fit
+        func_est <- NOIS_fit$fit_df$nr_fit
         if (bias_correct == T) {
-            func_est <- NOIS_fit$bias_first_fit
+            func_est <- NOIS_fit$fit_df$nr_bias_fit
         }
     } else {
         stop("Must supply valid fit_type: NOIS or regular.")
     }
+
+
 
     resid <- y - func_est
     center_resid <- resid - mean(resid)
@@ -240,26 +242,26 @@ EL_rootfun <- function(hyp_val, y, gkcalc, calib_type, conf_level, bias_correct,
 #' @export
 EL_confint <- function(NOIS_fit, conf_level = 0.05, fit_type = "NOIS", bias_correct = T, parallel = F, calib_type = "F",
     left = 0, right = 20, maxit = 50) {
-    x <- NOIS_fit$x
+    x <- NOIS_fit$fit_df$x
     if (fit_type == "NOIS") {
         bandwidth <- NOIS_fit$CV$pool_h
-        y <- NOIS_fit$y_adj
+        y <- NOIS_fit$fit_df$y_adj
         if (bias_correct == TRUE) {
-            nwfit <- NOIS_fit$pool_fit
-            theta <- NOIS_fit$bias_pool_fit
+            nwfit <- NOIS_fit$fit_df$fit
+            theta <- NOIS_fit$fit_df$bias_fit
         } else {
             nwfit <- NULL
-            theta <- NOIS_fit$pool_fit
+            theta <- NOIS_fit$fit_df$fit
         }
     } else if (fit_type == "regular") {
         bandwidth <- NOIS_fit$CV$first_h
-        y <- NOIS_fit$y
+        y <- NOIS_fit$fit_df$y
         if (bias_correct == TRUE) {
-            nwfit <- NOIS_fit$first_fit
-            theta <- NOIS_fit$bias_first_fit
+            nwfit <- NOIS_fit$fit_df$nr_fit
+            theta <- NOIS_fit$fit_df$nr_bias_fit
         } else {
             nwfit <- NULL
-            theta <- NOIS_fit$first_fit
+            theta <- NOIS_fit$fit_df$nr_fit
         }
     } else {
         stop("Must supply valid fit_type: NOIS or regular.")
@@ -330,13 +332,6 @@ NOIS_confint <- function(NOIS_fit, conf_type = "pred_BS", ...) {
         stop("Input must be a NOIS_fit")
     }
     switch(conf_type, pred_BS = pred_resid_BS_confint(NOIS_fit, ...), resid_BS = resid_BS_confint(NOIS_fit, ...), EL = EL_confint(NOIS_fit, ...))
-    # if (conf_type == "pred_BS") {
-    #     pred_resid_BS_confint(NOIS_fit, ...)
-    # } else if (conf_type == "resid_BS") {
-    #     resid_BS_confint(NOIS_fit, ...)
-    # } else if (conf_type == "EL") {
-    #     EL_confint(NOIS_fit, ...)
-    # }
 }
 
 
